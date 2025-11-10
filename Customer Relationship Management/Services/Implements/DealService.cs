@@ -30,9 +30,9 @@ namespace Customer_Relationship_Management.Services.Implements
             _logger = logger;
         }
 
-        // =====================================================================
+        // ===========================================================
         // 🧍‍♂️ KHU VỰC NHÂN VIÊN
-        // =====================================================================
+        // ===========================================================
 
         public async Task<IEnumerable<Deal>> GetDealsByEmployeeAsync(int employeeId)
             => await _dealRepository.GetDealsByEmployeeAsync(employeeId);
@@ -43,8 +43,7 @@ namespace Customer_Relationship_Management.Services.Implements
             if (deal == null || deal.IsDeleted)
                 return null;
 
-            // kiểm tra quyền nhân viên phụ trách
-            if (deal.Customer.AssignedToUserID != employeeId)
+            if (deal.Customer == null || deal.Customer.AssignedToUserID != employeeId)
                 return null;
 
             return deal;
@@ -52,56 +51,91 @@ namespace Customer_Relationship_Management.Services.Implements
 
         public async Task<(bool Success, string Message)> CreateDealAsync(Deal deal)
         {
+            // ✅ Kiểm tra dữ liệu đầu vào
             if (string.IsNullOrWhiteSpace(deal.DealName))
                 return (false, "Tên deal không được để trống.");
             if (deal.Value <= 0)
                 return (false, "Giá trị deal phải lớn hơn 0.");
 
             var customer = await _customerRepository.GetByIdAsync(deal.CustomerID);
-            if (customer == null)
-                return (false, "Khách hàng không tồn tại.");
+            if (customer == null || customer.IsDeleted)
+                return (false, "Khách hàng không tồn tại hoặc đã bị xóa.");
 
-            deal.CreatedAt = DateTime.UtcNow;
-            deal.UpdatedAt = DateTime.UtcNow;
+            // ✅ Chuẩn hóa dữ liệu
             deal.Stage ??= "Lead";
             deal.IsDeleted = false;
+            deal.CreatedAt = DateTime.UtcNow;
+            deal.UpdatedAt = DateTime.UtcNow;
 
             try
             {
                 await _dealRepository.AddAsync(deal);
                 await _dealRepository.SaveChangesAsync();
 
+                // 🧾 Ghi log tạo mới
                 await _auditLogService.LogAsync(
-                    deal.CreatedByUserID,
-                    ActionType.Create,
-                    "Deals",
-                    deal.DealID.ToString(),
-                    null,
-                    deal
+                    userId: deal.CreatedByUserID,
+                    action: ActionType.Create,
+                    tableName: "Deals",
+                    recordId: deal.DealID.ToString(),
+                    oldValue: null,
+                    newValue: new
+                    {
+                        deal.DealName,
+                        deal.Value,
+                        deal.Stage,
+                        deal.Deadline,
+                        deal.CustomerID,
+                        deal.Notes,
+                        deal.CreatedAt
+                    }
                 );
 
-                return (true, "Tạo deal thành công.");
+                return (true, "Thêm deal thành công.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Lỗi khi tạo deal: {Message}", ex.Message);
+
+                await _auditLogService.LogAsync(
+                    deal.CreatedByUserID,
+                    ActionType.Error,
+                    "Deals",
+                    "N/A",
+                    null,
+                    new { Error = ex.Message }
+                );
+
                 return (false, "Lỗi khi lưu dữ liệu deal.");
             }
         }
 
         public async Task<(bool Success, string Message)> UpdateDealAsync(Deal deal, int employeeId)
         {
-            var existing = await _dealRepository.GetDealWithCustomerByIdAsync(deal.DealID);
-            if (existing == null || existing.IsDeleted)
+            // ✅ Bước 1: Lấy dữ liệu cũ (NoTracking) để log
+            var oldEntity = await _dealRepository.GetByIdAsNoTrackingAsync(deal.DealID);
+            if (oldEntity == null || oldEntity.IsDeleted)
                 return (false, "Deal không tồn tại.");
-
-            if (existing.Customer.AssignedToUserID != employeeId)
+            if (oldEntity.Customer == null || oldEntity.Customer.AssignedToUserID != employeeId)
                 return (false, "Bạn không có quyền chỉnh sửa deal này.");
 
-            var oldData = AuditLog.ToJson(existing);
+            var oldData = new
+            {
+                oldEntity.DealName,
+                oldEntity.Value,
+                oldEntity.Stage,
+                oldEntity.Deadline,
+                oldEntity.Notes
+            };
+            var oldValueJson = AuditLog.ToJson(oldData);
 
             try
             {
+                // ✅ Bước 2: Cập nhật dữ liệu
+                var existing = await _dealRepository.GetByIdAsync(deal.DealID);
+                if (existing == null)
+                    return (false, "Không tìm thấy deal cần cập nhật.");
+
                 existing.DealName = deal.DealName;
                 existing.Value = deal.Value;
                 existing.Stage = deal.Stage;
@@ -109,16 +143,25 @@ namespace Customer_Relationship_Management.Services.Implements
                 existing.Notes = deal.Notes;
                 existing.UpdatedAt = DateTime.UtcNow;
 
-                _dealRepository.Update(existing);
+                await _dealRepository.UpdateAsync(existing);
                 await _dealRepository.SaveChangesAsync();
+
+                var newData = new
+                {
+                    existing.DealName,
+                    existing.Value,
+                    existing.Stage,
+                    existing.Deadline,
+                    existing.Notes
+                };
 
                 await _auditLogService.LogAsync(
                     employeeId,
                     ActionType.Update,
                     "Deals",
                     existing.DealID.ToString(),
-                    oldData,
-                    existing
+                    oldValueJson,
+                    newData
                 );
 
                 return (true, "Cập nhật deal thành công.");
@@ -132,24 +175,37 @@ namespace Customer_Relationship_Management.Services.Implements
 
         public async Task<(bool Success, string Message)> SoftDeleteAsync(int dealId, int employeeId)
         {
+            var existing = await _dealRepository.GetDealWithCustomerByIdAsync(dealId);
+            if (existing == null || existing.IsDeleted)
+                return (false, "Deal không tồn tại.");
+
+            if (existing.Customer == null || existing.Customer.AssignedToUserID != employeeId)
+                return (false, "Bạn không có quyền xóa deal này.");
+
             try
             {
-                await _dealRepository.SoftDeleteAsync(dealId, employeeId);
+                existing.IsDeleted = true;
+                existing.UpdatedAt = DateTime.UtcNow;
+
+                await _dealRepository.UpdateAsync(existing);
+                await _dealRepository.SaveChangesAsync();
 
                 await _auditLogService.LogAsync(
                     employeeId,
                     ActionType.Delete,
                     "Deals",
                     dealId.ToString(),
-                    null,
+                    new
+                    {
+                        existing.DealName,
+                        existing.Value,
+                        existing.Stage,
+                        existing.Deadline
+                    },
                     new { IsDeleted = true }
                 );
 
                 return (true, "Xóa deal thành công.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return (false, ex.Message);
             }
             catch (Exception ex)
             {
@@ -158,48 +214,46 @@ namespace Customer_Relationship_Management.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<Deal>> GetDealsByStageAsync(string stage, int? employeeId = null)
-            => await _dealRepository.GetDealsByStageAsync(stage, employeeId);
-
-        public async Task<IEnumerable<Deal>> SearchDealsAsync(int employeeId, string keyword)
-            => string.IsNullOrWhiteSpace(keyword)
-                ? Enumerable.Empty<Deal>()
-                : await _dealRepository.SearchDealsAsync(employeeId, keyword);
-
-        public async Task<IEnumerable<Deal>> GetDealsNearDeadlineAsync(int employeeId, int daysAhead = 7)
-            => await _dealRepository.GetDealsNearDeadlineAsync(employeeId, daysAhead);
-
-        public async Task<decimal> GetTotalDealValueByStageAsync(int employeeId, string stage)
-            => await _dealRepository.GetTotalDealValueByStageAsync(employeeId, stage);
-
         public async Task<bool> UpdateDealStageAsync(int dealId, string newStage, int employeeId)
         {
+            var deal = await _dealRepository.GetDealWithCustomerByIdAsync(dealId);
+            if (deal == null || deal.IsDeleted)
+                return false;
+
+            if (deal.Customer == null || deal.Customer.AssignedToUserID != employeeId)
+                return false;
+
+            var oldStage = deal.Stage;
+
             try
             {
-                var result = await _dealRepository.UpdateDealStageAsync(dealId, newStage);
-                if (result)
-                {
-                    await _auditLogService.LogAsync(
-                        employeeId,
-                        ActionType.Update,
-                        "Deals",
-                        dealId.ToString(),
-                        new { Stage = "Old" },
-                        new { Stage = newStage }
-                    );
-                }
-                return result;
+                deal.Stage = newStage;
+                deal.UpdatedAt = DateTime.UtcNow;
+
+                await _dealRepository.UpdateAsync(deal);
+                await _dealRepository.SaveChangesAsync();
+
+                await _auditLogService.LogAsync(
+                    employeeId,
+                    ActionType.Update,
+                    "Deals",
+                    dealId.ToString(),
+                    new { Stage = oldStage },
+                    new { Stage = newStage }
+                );
+
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Lỗi khi cập nhật stage deal: {Message}", ex.Message);
+                _logger.LogError(ex, "❌ Lỗi khi cập nhật stage deal {DealID}: {Message}", dealId, ex.Message);
                 return false;
             }
         }
 
-        // =====================================================================
+        // ===========================================================
         // 👔 KHU VỰC MANAGER
-        // =====================================================================
+        // ===========================================================
 
         public async Task<IEnumerable<Deal>> GetTeamDealsAsync(int managerId)
             => await _dealRepository.GetTeamDealsAsync(managerId);
@@ -217,27 +271,28 @@ namespace Customer_Relationship_Management.Services.Implements
 
         public async Task<(bool Success, string Message)> ReassignDealAsync(int dealId, int newEmployeeId, int managerId)
         {
+            var deal = await _dealRepository.GetByIdAsync(dealId);
+            if (deal == null || deal.IsDeleted)
+                return (false, "Deal không tồn tại.");
+
+            var oldEmployeeId = deal.CreatedByUserID;
+
             try
             {
                 var result = await _dealRepository.ReassignDealAsync(dealId, newEmployeeId, managerId);
+                if (!result)
+                    return (false, "Không thể chuyển giao deal.");
 
-                if (result)
-                {
-                    await _auditLogService.LogAsync(
-                        managerId,
-                        ActionType.Update,
-                        "Deals",
-                        dealId.ToString(),
-                        new { Old = "Previous employee" },
-                        new { NewEmployeeId = newEmployeeId }
-                    );
-                    return (true, "Chuyển giao deal thành công.");
-                }
-                return (false, "Không thể chuyển giao deal.");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return (false, ex.Message);
+                await _auditLogService.LogAsync(
+                    managerId,
+                    ActionType.Update,
+                    "Deals",
+                    dealId.ToString(),
+                    new { AssignedTo = oldEmployeeId },
+                    new { AssignedTo = newEmployeeId }
+                );
+
+                return (true, "Chuyển giao deal thành công.");
             }
             catch (Exception ex)
             {
@@ -245,6 +300,24 @@ namespace Customer_Relationship_Management.Services.Implements
                 return (false, "Lỗi khi chuyển giao deal.");
             }
         }
+
+        // ===========================================================
+        // 🔍 TIỆN ÍCH KHÁC
+        // ===========================================================
+
+        public async Task<IEnumerable<Deal>> GetDealsByStageAsync(string stage, int? employeeId = null)
+            => await _dealRepository.GetDealsByStageAsync(stage, employeeId);
+
+        public async Task<IEnumerable<Deal>> SearchDealsAsync(int employeeId, string keyword)
+            => string.IsNullOrWhiteSpace(keyword)
+                ? Enumerable.Empty<Deal>()
+                : await _dealRepository.SearchDealsAsync(employeeId, keyword);
+
+        public async Task<IEnumerable<Deal>> GetDealsNearDeadlineAsync(int employeeId, int daysAhead = 7)
+            => await _dealRepository.GetDealsNearDeadlineAsync(employeeId, daysAhead);
+
+        public async Task<decimal> GetTotalDealValueByStageAsync(int employeeId, string stage)
+            => await _dealRepository.GetTotalDealValueByStageAsync(employeeId, stage);
 
         public async Task<IEnumerable<string>> GetDealFilesAsync(int dealId)
             => await _dealRepository.GetDealFilesAsync(dealId);
