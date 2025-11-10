@@ -1,0 +1,160 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Admin.Audit.IndexModel
+@{
+    ViewData["Title"] = "Audit Logs Center";
+    ViewData["ActiveMenu"] = "Audit";
+    Layout = "/Pages/Shared/_LayoutAdmin.cshtml";
+}
+<style>
+    .admin-gradient-heading {
+        background: linear-gradient(90deg, #2f3542 0%, #58606c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+    }
+
+    .glass-card-admin {
+        backdrop-filter: blur(8px);
+        background: rgba(47, 53, 66, 0.07);
+        border-radius: 14px;
+        color: #212529;
+        border: 1px solid #e3e3e3;
+        box-shadow: 0 1px 8px rgba(44,62,80,0.07);
+    }
+
+    .btn-admin-gradient {
+        background: linear-gradient(180deg, #2f3542 0%, #58606c 100%);
+        color: #fff !important;
+        border: none;
+        transition: .3s;
+        font-weight: 600;
+    }
+
+        .btn-admin-gradient:hover {
+            opacity: .9;
+            transform: translateY(-1px);
+        }
+
+    .form-label, .audit-label {
+        font-weight: 600;
+        color: #58606c !important;
+    }
+
+    .audit-radio-icon {
+        font-size: 1.3rem;
+        margin-right: 0.25rem;
+        color: #58606c;
+        vertical-align: middle;
+    }
+
+    .audit-list-group .list-group-item {
+        background: rgba(245,247,250,0.67);
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: .5rem;
+        color: #212529;
+        transition: background .2s;
+    }
+
+    .audit-list-group .form-check-input:checked ~ .audit-label {
+        color: #2f3542 !important;
+    }
+
+    .audit-list-group .list-group-item:hover {
+        background-color: rgba(47,53,66,.12);
+    }
+
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="admin-gradient-heading mb-0">
+                <i class="bi bi-shield-lock-fill me-2"></i>Audit Log Center
+            </h2>
+            <p class="text-muted mb-0 small">Kiểm tra nhật ký hoạt động của hệ thống</p>
+        </div>
+        <span class="badge bg-light text-dark px-3 py-2 fw-semibold shadow-sm">System Secure Zone</span>
+    </div>
+
+    <div class="glass-card-admin card border-0 shadow-sm p-4 mb-3">
+        <form id="auditForm" method="get">
+            <div class="mb-3">
+                <label class="audit-label mb-2">Chọn loại Audit Log để xem chi tiết:</label>
+                <div class="audit-list-group">
+                    <div class="list-group-item">
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Users" value="Users" />
+                            <label class="form-check-label audit-label mb-0" for="Users">
+                                <i class="bi bi-person-badge audit-radio-icon"></i>
+                                <strong>Users</strong>
+                                <span class="d-block text-muted small">Quản lý tài khoản, đăng nhập, reset, phân quyền.</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Customers" value="Customers" />
+                            <label class="form-check-label audit-label mb-0" for="Customers">
+                                <i class="bi bi-building audit-radio-icon"></i>
+                                <strong>Customers</strong>
+                                <span class="d-block text-muted small">Nhật ký thay đổi thông tin khách hàng.</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Deals" value="Deals" />
+                            <label class="form-check-label audit-label mb-0" for="Deals">
+                                <i class="bi bi-briefcase audit-radio-icon"></i>
+                                <strong>Deals</strong>
+                                <span class="d-block text-muted small">Hoạt động liên quan đến deals, trạng thái.</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Contracts" value="Contracts" />
+                            <label class="form-check-label audit-label mb-0" for="Contracts">
+                                <i class="bi bi-file-earmark-text audit-radio-icon"></i>
+                                <strong>Contracts</strong>
+                                <span class="d-block text-muted small">Quản lý và duyệt hợp đồng, nhật ký.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Chỉ Admin cấp cao</strong> có thể xem các Audit Log chi tiết.
+                </div>
+                <button type="button" id="viewLogsBtn" class="btn btn-admin-gradient rounded-pill shadow-sm px-4">
+                    <i class="bi bi-eye-fill me-2"></i> Xem log chi tiết
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById("viewLogsBtn").addEventListener("click", function () {
+        const selected = document.querySelector('input[name="selectedLog"]:checked');
+        if (!selected) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa chọn loại log!',
+                text: 'Vui lòng chọn một loại Audit Log trước khi xem chi tiết.',
+                confirmButtonColor: '#58606c'
+            });
+            return;
+        }
+        const target = selected.value;
+        window.location.href = `/Admin/Audit/${target}`;
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

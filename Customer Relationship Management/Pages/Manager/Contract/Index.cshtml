@@ -1,0 +1,263 @@
+﻿@page "{status?}"
+@model Customer_Relationship_Management.Pages.Manager.Contract.IndexModel
+@{
+    ViewData["Title"] = "Quản lý hợp đồng";
+    ViewData["ActiveMenu"] = "Contracts";
+    Layout = "_LayoutManager";
+}
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý Hợp đồng</h2>
+            <p class="text-muted mb-0 small">Duyệt, theo dõi trạng thái và tìm kiếm hợp đồng</p>
+        </div>
+    </div>
+
+    <!-- Bộ lọc tìm kiếm (giữ tab trạng thái hiện tại) -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <input type="hidden" name="status" value="@Model.CurrentStatus" />
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Từ ngày</label>
+                <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Đến ngày</label>
+                <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Tìm kiếm</label>
+                <input type="text" name="Keyword" value="@Model.Keyword" placeholder="Tên deal, người tạo hoặc nội dung hợp đồng..." class="form-control shadow-sm" />
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-gradient-mgr px-4">Lọc</button>
+                <a asp-page="./Index" asp-route-status="@Model.CurrentStatus" class="btn btn-gradient-mgr px-4 ms-2">Đặt lại</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabs filter -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Pending" ? "active" : "")" asp-page="./Index" asp-route-status="Pending">Pending</a></li>
+        <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Approved" ? "active" : "")" asp-page="./Index" asp-route-status="Approved">Approved</a></li>
+        <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Rejected" ? "active" : "")" asp-page="./Index" asp-route-status="Rejected">Rejected</a></li>
+    </ul>
+
+    @if (Model.Contracts.Any())
+    {
+        <div class="table-responsive card table-card p-3">
+            <table class="table table-hover align-middle text-dark bg-white" id="contractsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Deal</th>
+                        <th>Người tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var contract in Model.Contracts)
+                    {
+                        <tr>
+                            <td>@contract.ContractID</td>
+                            <td>@contract.Deal?.DealName</td>
+                            <td>@contract.CreatedBy?.FullName</td>
+                            <td>@contract.ApprovalStatus</td>
+                            <td>@contract.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <!-- Xem chi tiết: POST để nạp dữ liệu, JS sẽ mở modal sau khi render -->
+                                <form method="post" asp-page-handler="LoadDetails" style="display:inline">
+                                    <input type="hidden" name="id" value="@contract.ContractID" />
+                                    <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                    <button type="submit" class="btn btn-sm btn-outline-info">Xem</button>
+                                </form>
+
+                                @if (Model.CurrentStatus == "Pending")
+                                {
+                                    <form method="post" asp-page-handler="Approve" asp-route-id="@contract.ContractID" style="display:inline">
+                                        <!-- type=button + data-confirm -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-success js-confirm"
+                                                data-title="Phê duyệt hợp đồng?"
+                                                data-text="Bạn chắc chắn muốn phê duyệt hợp đồng #@contract.ContractID?"
+                                                data-icon="question"
+                                                data-confirm="#198754">
+                                            Duyệt
+                                        </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Reject" asp-route-id="@contract.ContractID" style="display:inline">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger js-confirm"
+                                                data-title="Từ chối hợp đồng?"
+                                                data-text="Bạn chắc chắn muốn từ chối hợp đồng #@contract.ContractID?"
+                                                data-icon="warning"
+                                                data-confirm="#dc3545">
+                                            Từ chối
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">Không có hợp đồng nào cho bộ lọc này.</p>
+    }
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Chi tiết hợp đồng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (Model.SelectedContract != null)
+                {
+                    var c = Model.SelectedContract;
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <p><strong>Mã:</strong> @c.ContractID</p>
+                            <p><strong>Deal:</strong> @c.Deal?.DealName</p>
+                            <p><strong>Người tạo:</strong> @c.CreatedBy?.FullName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Trạng thái:</strong> @c.ApprovalStatus</p>
+                            <p><strong>Ngày tạo:</strong> @c.CreatedAt.ToString("dd/MM/yyyy")</p>
+                            @if (c.ApprovedAt != null)
+                            {
+                                <p><strong>Ngày duyệt:</strong> @c.ApprovedAt?.ToString("dd/MM/yyyy")</p>
+                            }
+                        </div>
+                        <div class="col-12">
+                            <p class="mb-1"><strong>Nội dung:</strong></p>
+                            <div class="p-2 bg-light text-dark rounded" style="white-space:pre-wrap">@c.ContractContent</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(c.FilePath))
+                        {
+                            <div class="col-12">
+                                <a href="@c.FilePath" target="_blank" class="btn btn-outline-secondary">Tải file</a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">Chọn "Xem" để tải chi tiết hợp đồng.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* match light green gradient used in top bar/sidebar */
+        .btn-gradient-mgr {
+            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            color: #fff;
+            border: none;
+            transition: .3s;
+        }
+
+            .btn-gradient-mgr:hover {
+                transform: translateY(-1px);
+                opacity: .95;
+            }
+
+        .text-gradient-mgr {
+            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 14px;
+            color: #212529;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: .75rem;
+        }
+
+        table.table {
+            background-color: #fff;
+            color: #212529;
+        }
+
+            table.table thead th {
+                color: #212529;
+            }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #212529;
+        }
+
+        .modal-title, .modal-body, .modal-body p, .modal-body strong {
+            color: #212529;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Modal detail auto-open (giữ nguyên)
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalEl = document.getElementById('detailsModal');
+            if (modalEl && modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+
+            const hasDetails = '@(Model.SelectedContract != null ? "true" : "false")' === 'true';
+            if (hasDetails) bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true, focus: true }).show();
+        });
+
+        // Xác nhận Duyệt/Từ chối
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.js-confirm');
+            if (!btn) return;
+
+            e.preventDefault();
+            const form = btn.closest('form');
+            const title = btn.dataset.title || 'Xác nhận?';
+            const text = btn.dataset.text || 'Bạn chắc chắn?';
+            const icon = btn.dataset.icon || 'question';
+            const confirmColor = btn.dataset.confirm || '#198754';
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+}

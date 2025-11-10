@@ -1,0 +1,126 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Manager.DashboardModel
+@{
+    Layout = "_LayoutManager";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveMenu"] = "Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <h2 class="mb-4 fw-bold text-primary">
+        <i class="bi bi-speedometer2 me-2"></i> Tổng quan hoạt động
+    </h2>
+
+    <!-- Thống kê nhanh -->
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-gradient-primary text-white p-3 rounded-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-semibold">Khách hàng</h6>
+                        <h3 class="fw-bold mb-0">125</h3>
+                    </div>
+                    <i class="bi bi-people-fill fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-gradient-success text-white p-3 rounded-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-semibold">Hợp đồng</h6>
+                        <h3 class="fw-bold mb-0">42</h3>
+                    </div>
+                    <i class="bi bi-briefcase-fill fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-gradient-warning text-white p-3 rounded-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-semibold">Công việc hôm nay</h6>
+                        <h3 class="fw-bold mb-0">8</h3>
+                    </div>
+                    <i class="bi bi-calendar-check-fill fs-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-gradient-danger text-white p-3 rounded-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-semibold">Ticket hỗ trợ</h6>
+                        <h3 class="fw-bold mb-0">5</h3>
+                    </div>
+                    <i class="bi bi-ticket-perforated-fill fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ & hoạt động gần đây -->
+    <div class="row mt-4 g-4">
+        <!-- Biểu đồ -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-light fw-semibold">
+                    <i class="bi bi-graph-up-arrow me-2 text-primary"></i> Hiệu suất doanh số
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách hoạt động -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-light fw-semibold">
+                    <i class="bi bi-clock-history me-2 text-primary"></i> Hoạt động gần đây
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">✅ Hoàn tất hợp đồng #HD102</li>
+                        <li class="list-group-item">🕒 Hẹn gặp khách hàng ABC Corp</li>
+                        <li class="list-group-item">📄 Gửi báo giá cho Công ty XYZ</li>
+                        <li class="list-group-item">📞 Gọi hỗ trợ khách hàng DEF</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('salesChart');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
+                datasets: [{
+                    label: 'Doanh số (triệu VND)',
+                    data: [12, 19, 15, 23, 28, 35],
+                    fill: true,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+}

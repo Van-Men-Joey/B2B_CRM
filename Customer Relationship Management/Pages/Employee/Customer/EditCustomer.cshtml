@@ -1,0 +1,85 @@
+﻿@page "{id:int}"
+@model Customer_Relationship_Management.Pages.Employee.Customer.EditCustomerModel
+@{
+    Layout = "_LayoutEmployee";
+}
+
+<h2 class="text-primary mb-4">
+    <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa thông tin khách hàng
+</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.CustomerCode" class="form-control" placeholder="Mã Khách Hàng" disabled />
+                <label asp-for="EditCustomer.CustomerCode"></label>
+                <input type="hidden" asp-for="EditCustomer.CustomerID" />
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.CompanyName" class="form-control" placeholder="Tên công ty" />
+                <label asp-for="EditCustomer.CompanyName"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.ContactName" class="form-control" placeholder="Liên hệ" />
+                <label asp-for="EditCustomer.ContactName"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.ContactEmail" class="form-control" placeholder="Email" />
+                <label asp-for="EditCustomer.ContactEmail"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.ContactPhone" class="form-control" placeholder="Điện thoại" />
+                <label asp-for="EditCustomer.ContactPhone"></label>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.Industry" class="form-control" placeholder="Ngành nghề" />
+                <label asp-for="EditCustomer.Industry"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.Scale" class="form-control" placeholder="Quy mô" />
+                <label asp-for="EditCustomer.Scale"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.Address" class="form-control" placeholder="Địa chỉ" />
+                <label asp-for="EditCustomer.Address"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <textarea asp-for="EditCustomer.Notes" class="form-control" placeholder="Ghi chú"></textarea>
+                <label asp-for="EditCustomer.Notes"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="EditCustomer.ContactTitle" class="form-control" placeholder="Chức vụ" />
+                <label asp-for="EditCustomer.ContactTitle"></label>
+            </div>
+
+            <!-- VIP không chỉnh sửa -->
+            <div class="form-floating mb-3">
+                <input class="form-control" value="@(Model.EditCustomer.VIP ? "⭐ VIP" : "Không")" disabled />
+                <label>VIP</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end mt-4">
+        <button type="submit" class="btn btn-warning px-4 py-2 shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>Cập nhật
+        </button>
+        <a asp-page="/Employee/Customer/Customer" class="btn btn-secondary px-4 py-2">
+            <i class="bi bi-arrow-left-circle me-2"></i>Quay lại
+        </a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

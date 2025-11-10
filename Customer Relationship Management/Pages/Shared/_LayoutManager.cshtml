@@ -1,0 +1,157 @@
+﻿@{
+    Layout = null;
+    var userName = User.Identity?.Name ?? "Manager";
+    var currentPath = Context?.Request?.Path.Value ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CRM Manager</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <style>
+        /* Apply the same green→teal gradient as Employee */
+        body{
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+            background-color:#f5f7fa;
+            color:#0f0f0f;
+        }
+
+        /* Top bar gradient */
+        .manager-topbar{
+            background: linear-gradient(135deg, #198754 0%, #20c997 100%) !important;
+            color:#fff;
+            padding:.6rem 1.5rem;
+            box-shadow:0 6px 18px rgba(0,0,0,.12);
+            border-bottom:1px solid rgba(255,255,255,.12);
+            z-index:1000;
+        }
+
+        /* Sidebar uses same palette for consistency */
+        .manager-sidebar{
+            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            min-height:100vh;
+            color:#fff;
+            width:260px;
+            box-shadow: inset -1px 0 0 rgba(255,255,255,.06);
+        }
+
+        .manager-sidebar .nav-link{
+            color:#ffffff !important;
+            padding:.75rem 1rem;
+            border-radius:8px;
+            transition:all .18s ease;
+        }
+        .manager-sidebar .nav-link:hover,
+        .manager-sidebar .nav-link:focus{
+            color:#eafff3 !important;
+            background: rgba(255,255,255,.12);
+        }
+        .manager-sidebar .nav-link.active{
+            color:#eafff3 !important;
+            background: rgba(255,255,255,.12);
+            position:relative;
+        }
+        .manager-sidebar .nav-link.active::before{
+            content:"";
+            position:absolute; left:-6px; top:10%; bottom:10%; width:4px; border-radius:4px;
+            background:linear-gradient(180deg,#ffffff,rgba(255,255,255,.6));
+        }
+
+        /* Page content stays white (e.g., Contract pages) */
+        .content-area{
+            background:#ffffff;
+            min-height:100vh;
+            padding:1.5rem;
+        }
+
+        footer{ border-top:1px solid #e9ecef; margin-top:2rem; color:#6c757d; }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Top bar -->
+    <header class="manager-topbar d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-lock-fill text-warning fs-4"></i>
+            <div>
+                <div class="fw-bold">CRM Manager</div>
+                <div class="small text-white-50">Bảng điều khiển quản lý</div>
+            </div>
+        </div>
+
+        <ul class="navbar-nav align-items-center">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white"
+                   href="#" id="mgrProfileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle fs-5"></i>
+                    <span>Xin chào, <strong>@userName</strong></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" aria-labelledby="mgrProfileDropdown">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2" asp-page="/Manager/Profile/Index">
+                            <i class="bi bi-person-lines-fill"></i> Hồ sơ
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1" /></li>
+                    <li>
+                        <form method="post" asp-page="/Account/Logout" class="m-0">
+                            <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 w-100 border-0 bg-transparent text-start p-2">
+                                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </header>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <aside class="manager-sidebar p-3">
+            <nav class="nav flex-column">
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Index") || currentPath.Equals("/Manager") ? "active" : "")" asp-page="/Manager/Index">
+                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Customer") ? "active" : "")" asp-page="/Manager/Customer/Index">
+                    <i class="bi bi-people-fill me-2"></i> Client / Khách Hàng
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Deal") ? "active" : "")" asp-page="/Manager/Deal/Index">
+                    <i class="bi bi-briefcase-fill me-2"></i> Deal / Hợp Đồng
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Tasks") ? "active" : "")" asp-page="/Manager/Tasks">
+                    <i class="bi bi-calendar-check-fill me-2"></i> Task / Công Việc
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Contract") ? "active" : "")" asp-page="/Manager/Contract/Index">
+                    <i class="bi bi-file-earmark-text-fill me-2"></i> Contract & Quotation / Hợp Đồng & Báo Giá
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Tickets") ? "active" : "")" asp-page="/Manager/Tickets">
+                    <i class="bi bi-ticket-perforated-fill me-2"></i> Support / Hỗ Trợ
+                </a>
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Accounts") ? "active" : "")" asp-page="/Manager/Accounts">
+                    <i class="bi bi-person-gear me-2"></i> Employee / Nhân Viên
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Content -->
+        <main class="content-area flex-grow-1">
+            @RenderBody()
+            <footer class="pt-4 small text-muted">
+                <div class="d-flex justify-content-between">
+                    <div>© @DateTime.Now.Year CRM Manager Console</div>
+                    <div>Uy tín • Chuyên nghiệp</div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

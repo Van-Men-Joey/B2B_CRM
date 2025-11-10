@@ -1,0 +1,161 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Manager.Profile.IndexModel
+@{
+    Layout = "~/Pages/Shared/_LayoutManager.cshtml";
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<style>
+    .glass-card {
+        backdrop-filter: blur(10px);
+        background: rgba(255,255,255,0.93);
+        border-radius: 14px;
+        color: #212529;
+        box-shadow: 0 1px 8px rgba(44,62,80,0.06);
+    }
+
+    .heading-gradient {
+        background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+        margin-bottom: 16px;
+    }
+
+    .profile-label {
+        font-weight: 600;
+        color: #111;
+        letter-spacing: -.3px;
+        margin-bottom: 4px;
+    }
+
+    .profile-input {
+        border-radius: 8px;
+    }
+
+    .btn-gradient-green {
+        background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+        color: #fff !important;
+        border: none;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: .25s;
+        box-shadow: 0 4px 16px -4px rgba(25,135,84,.35);
+    }
+
+        .btn-gradient-green:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -4px rgba(25,135,84,.45);
+        }
+
+    .btn-warning {
+        color: #fff !important;
+        background: #ffc107 !important;
+        border: none;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+
+    .modal-content {
+        border-radius: 14px;
+    }
+
+    .modal-title.heading-modal {
+        background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+        letter-spacing: -.3px;
+    }
+</style>
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <div class="glass-card p-4 position-relative mb-4">
+        <h2 class="heading-gradient">Hồ sơ cá nhân</h2>
+
+        @if (TempData["Success"] is string ok)
+        {
+            <div class="alert alert-success">@ok</div>
+        }
+        @if (!ViewData.ModelState.IsValid)
+        {
+            foreach (var m in ViewData.ModelState)
+            {
+                foreach (var err in m.Value.Errors)
+                {
+                    <div class="alert alert-danger">@err.ErrorMessage</div>
+                }
+            }
+        }
+
+        <form method="post" autocomplete="off">
+            <div class="mb-3">
+                <label class="profile-label">Mã người dùng</label>
+                <input asp-for="CurrentUser.UserCode" class="form-control profile-input" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label class="profile-label">Họ và tên</label>
+                <input asp-for="CurrentUser.FullName" class="form-control profile-input" />
+            </div>
+
+            <div class="mb-3">
+                <label class="profile-label">Email</label>
+                <input asp-for="CurrentUser.Email" class="form-control profile-input" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label class="profile-label">Số điện thoại</label>
+                <input asp-for="CurrentUser.Phone" class="form-control profile-input" />
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mt-4">
+                <button type="button"
+                        class="btn btn-warning px-4"
+                        data-bs-toggle="modal"
+                        data-bs-target="#changePasswordModal">
+                    🔒 Đổi mật khẩu
+                </button>
+                <button type="submit" class="btn btn-gradient-green px-4">💾 Cập nhật</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal đổi mật khẩu -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" asp-page-handler="ChangePassword" autocomplete="off">
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header pb-2 pt-3">
+                        <h5 class="modal-title heading-modal" id="changePasswordModalLabel">Đổi mật khẩu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body pt-2">
+                        <div class="mb-3">
+                            <label for="OldPassword" class="profile-label">Mật khẩu cũ</label>
+                            <input type="password" class="form-control profile-input" id="OldPassword" name="OldPassword" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="NewPassword" class="profile-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control profile-input" id="NewPassword" name="NewPassword" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="ConfirmPassword" class="profile-label">Xác nhận mật khẩu</label>
+                            <input type="password" class="form-control profile-input" id="ConfirmPassword" name="ConfirmPassword" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-gradient-green px-4">Cập nhật mật khẩu</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

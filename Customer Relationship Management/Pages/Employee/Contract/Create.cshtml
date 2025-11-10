@@ -1,0 +1,79 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Employee.Contract.CreateModel
+@{
+    ViewData["Title"] = "Tạo Hợp đồng mới";
+    ViewData["ActiveMenu"] = "Quotation & Contract";
+    Layout = "_LayoutEmployee";
+}
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <div class="card glass-card border-0 shadow-lg">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+            <h5 class="mb-0">Tạo Hợp đồng mới</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Chọn Deal</label>
+                    <select asp-for="ContractModel.DealID" class="form-select shadow-sm">
+                        <option value="">-- Chọn Deal --</option>
+                        @foreach (var deal in Model.Deals)
+                        {
+                            <option value="@deal.DealID">@deal.DealName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ContractModel.DealID" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Nội dung hợp đồng</label>
+                    <textarea asp-for="ContractModel.ContractContent" class="form-control shadow-sm" rows="5"></textarea>
+                    <span asp-validation-for="ContractModel.ContractContent" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tệp hợp đồng (PDF)</label>
+                    <input type="file" asp-for="UploadFile" class="form-control shadow-sm" accept=".pdf" />
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-gradient px-4">
+                        Gửi yêu cầu duyệt
+                    </button>
+                    <a asp-page="/Employee/Contract/Index" class="btn btn-outline-secondary px-4">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .btn-gradient {
+            background: linear-gradient(45deg, #007bff, #00d4ff);
+            color: #fff;
+            border: none;
+            transition: .3s;
+        }
+
+            .btn-gradient:hover {
+                transform: scale(1.05);
+                opacity: .9;
+            }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            color: #212529;
+        }
+
+        .bg-gradient-blue {
+            background: linear-gradient(45deg, #007bff, #00b4ff);
+        }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

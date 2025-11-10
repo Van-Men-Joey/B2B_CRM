@@ -1,0 +1,247 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Employee.DashboardModel
+@{
+    Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveMenu"] = "Dashboard";
+}
+
+<!-- Giao diện chính -->
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient mb-0">Bảng điều khiển</h2>
+            <p class="text-muted mb-0 small">Tổng quan công việc và kết quả gần đây của bạn</p>
+        </div>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-light shadow-sm">
+                <h6 class="text-secondary mb-1">Deal đang chạy</h6>
+                <h3 class="fw-bold">@Model.RunningDeals</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-success text-white shadow-sm">
+                <h6 class="mb-1">Deal thành công</h6>
+                <h3>@Model.WonDeals</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-warning text-dark shadow-sm">
+                <h6 class="mb-1">Khách hàng tiềm năng</h6>
+                <h3>@Model.PotentialCustomers</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-info text-white shadow-sm">
+                <h6 class="mb-1">Tổng giá trị Deal</h6>
+                <h3>@Model.TotalDealValue.ToString("N0") ₫</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ -->
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Tỉ lệ deal theo giai đoạn</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.DealStageCounts?.Any() == true)
+                    {
+                        <canvas id="dealStageChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Khách hàng theo ngành nghề</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.CustomerIndustryCounts?.Any() == true)
+                    {
+                        <canvas id="customerIndustryChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Doanh thu theo tháng</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.MonthlyRevenue?.Any() == true)
+                    {
+                        <canvas id="monthlyRevenueChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Tỷ lệ thắng theo tháng</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.MonthlyWinRate?.Any() == true)
+                    {
+                        <canvas id="winRateChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Phân bố giá trị Deal</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.DealSizeCounts?.Any() == true)
+                    {
+                        <canvas id="dealSizeChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card glass-card border-0 shadow-lg mb-3">
+                <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+                    <h6 class="mb-0">Khách hàng mới theo tháng</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.NewCustomersPerMonth?.Any() == true)
+                    {
+                        <canvas id="newCustomersChart" class="chart-canvas"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Không có dữ liệu.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deal gần hết hạn -->
+    <div class="card glass-card border-0 shadow-lg mt-2">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+            <h6 class="mb-0">⚠️ Deal gần đến hạn (7 ngày tới)</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.NearDeadlineDeals?.Any() == true)
+            {
+                <div class="table-responsive mt-2">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tên Deal</th>
+                                <th>Khách hàng</th>
+                                <th>Giai đoạn</th>
+                                <th>Giá trị</th>
+                                <th>Hạn chót</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.NearDeadlineDeals)
+                            {
+                                <tr>
+                                    <td>@d.DealName</td>
+                                    <td>@d.Customer?.CompanyName</td>
+                                    <td>@d.Stage</td>
+                                    <td>@d.Value.ToString("N0") ₫</td>
+                                    <td>@d.Deadline?.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Không có deal sắp hết hạn.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Đồng bộ phong cách với trang Deal */
+        .btn-gradient { background: linear-gradient(45deg, #007bff, #00d4ff); color: #fff; border: none; transition: .3s; }
+        .btn-gradient:hover { transform: scale(1.05); opacity: .9; }
+        .text-gradient { background: linear-gradient(90deg, #007bff, #00c6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.9); border-radius: 14px; color: #212529; }
+        .bg-gradient-blue { background: linear-gradient(45deg, #007bff, #00b4ff); }
+        .chart-canvas { width: 100% !important; height: 230px !important; }
+        .stat-card { border-radius: 16px; padding: 18px 14px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,0.1); color: #fff; transition: .3s; }
+        .stat-card h3 { font-weight: 700; margin: 0; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .stat-card.bg-light { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #0d47a1; }
+        .stat-card.bg-success { background: linear-gradient(135deg, #4caf50, #2e7d32); color: #fff; }
+        .stat-card.bg-warning { background: linear-gradient(135deg, #ffca28, #f57f17); color: #212529; }
+        .stat-card.bg-danger { background: linear-gradient(135deg, #ef5350, #b71c1c); color: #fff; }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script>
+        Chart.defaults.font.family = "Segoe UI, Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.font.size = 12;
+        const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+        const textColor = '#212529';
+        const colors = ['#007bff','#00c6ff','#ffca28','#4caf50','#ef5350'];
+        function unwrapDotNet(obj){ if (!obj) return []; if (Array.isArray(obj)) return obj; if (obj.$values) return obj.$values; return []; }
+        const safeArray = data => Array.isArray(data) ? data : unwrapDotNet(data);
+        const charts = {
+            dealStageChart: { type: 'doughnut', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.DealStageLabels))), datasets: [{ data: safeArray(@Html.Raw(Json.Serialize(Model.DealStageCounts))), backgroundColor: colors }] } },
+            customerIndustryChart: { type: 'bar', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.CustomerIndustryLabels))), datasets: [{ label: 'Số KH', data: safeArray(@Html.Raw(Json.Serialize(Model.CustomerIndustryCounts))), backgroundColor: '#00c6ff' }] } },
+            monthlyRevenueChart: { type: 'line', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.MonthLabels))), datasets: [{ label: 'Doanh thu (₫)', data: safeArray(@Html.Raw(Json.Serialize(Model.MonthlyRevenue))), borderColor: '#007bff', backgroundColor: 'rgba(0,123,255,0.12)', fill: true, tension: 0.35 }] } },
+            winRateChart: { type: 'line', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.MonthLabels))), datasets: [{ label: 'Tỷ lệ thắng (%)', data: safeArray(@Html.Raw(Json.Serialize(Model.MonthlyWinRate))), borderColor: '#4caf50', backgroundColor: 'rgba(76,175,80,0.12)', fill: true, tension: 0.35 }] }, options: { scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } } } },
+            dealSizeChart: { type: 'pie', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.DealSizeLabels))), datasets: [{ data: safeArray(@Html.Raw(Json.Serialize(Model.DealSizeCounts))), backgroundColor: ['#ffca28', '#00c6ff', '#ef5350'] }] } },
+            newCustomersChart: { type: 'bar', data: { labels: safeArray(@Html.Raw(Json.Serialize(Model.MonthLabels))), datasets: [{ label: 'Khách hàng mới', data: safeArray(@Html.Raw(Json.Serialize(Model.NewCustomersPerMonth))), backgroundColor: '#007bff' }] } }
+        };
+        document.addEventListener('DOMContentLoaded', () => {
+            for (const [id, cfg] of Object.entries(charts)) {
+                const el = document.getElementById(id);
+                if (!el) continue;
+                new Chart(el, { type: cfg.type, data: cfg.data, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor }, position: 'bottom' } }, scales: (cfg.type === 'bar' || cfg.type === 'line') ? { x: { ticks: { color: textColor } }, y: { beginAtZero: true, ticks: { color: textColor } } } : {} } });
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,467 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Employee.Deal.IndexModel
+@{
+    Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
+    ViewData["Title"] = "Deals";
+    ViewData["ActiveMenu"] = "Deal";
+}
+
+<!-- Giao diện chính -->
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient mb-0">Danh sách Deal của bạn</h2>
+            <p class="text-muted mb-0 small">Theo dõi tiến độ và kết quả các cơ hội kinh doanh</p>
+        </div>
+        <a asp-page="/Employee/Deal/Create" class="btn btn-gradient shadow-sm px-4">
+            Tạo Deal mới
+        </a>
+    </div>
+
+    <!-- Bộ lọc -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Giai đoạn</label>
+                <select name="StageFilter" class="form-select">
+                    <option value="">-- Tất cả --</option>
+                    <option value="Lead" selected="@(Model.StageFilter == "Lead")">Lead</option>
+                    <option value="Negotiation" selected="@(Model.StageFilter == "Negotiation")">Negotiation</option>
+                    <option value="Contract Sent" selected="@(Model.StageFilter == "Contract Sent")">Contract Sent</option>
+                    <option value="Closed Won" selected="@(Model.StageFilter == "Closed Won")">Closed Won</option>
+                    <option value="Closed Lost" selected="@(Model.StageFilter == "Closed Lost")">Closed Lost</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Từ hạn chót</label>
+                <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Đến hạn chót</label>
+                <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Tìm kiếm</label>
+                <input type="text" name="Keyword" value="@Model.Keyword"
+                       placeholder="Tên deal hoặc khách hàng..." class="form-control shadow-sm" />
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-gradient px-4">
+                    Lọc
+                </button>
+                <a href="@Url.Page("/Employee/Deal/Index")" class="btn btn-gradient px-4 ms-2">
+                    Đặt lại
+                </a>
+
+            </div>
+        </div>
+    </form>
+
+
+
+    <!-- Thống kê nhanh -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-light shadow-sm">
+                <h6 class="text-secondary mb-1">Tổng Deal</h6>
+                <h3 class="fw-bold">@Model.Deals.Count()</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-success text-white shadow-sm">
+                <h6 class="mb-1">Đã chốt (Won)</h6>
+                <h3>@Model.Deals.Count(d => d.Stage == "Closed Won")</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-warning text-dark shadow-sm">
+                <h6 class="mb-1">Thương lượng</h6>
+                <h3>@Model.Deals.Count(d => d.Stage == "Negotiation")</h3>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card bg-danger text-white shadow-sm">
+                <h6 class="mb-1">Mất Deal</h6>
+                <h3>@Model.Deals.Count(d => d.Stage == "Closed Lost")</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách Deal -->
+    <div class="card border-0 shadow-lg glass-card">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Danh sách Deal</h5>
+            <span class="small opacity-75">B2B là cuộc chơi dài hạn – chốt hôm nay, đồng hành ngày mai</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light">
+                    <tr class="text-center fw-semibold">
+                        <th>Tên Deal</th>
+                        <th>Giá trị</th>
+                        <th>Giai đoạn</th>
+                        <th>Khách hàng</th>
+                        <th>Hạn chót</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Deals.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Không có deal nào để hiển thị.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var deal in Model.Deals)
+                        {
+                            var stageColor = deal.Stage switch
+                            {
+                                "Lead" => "badge bg-secondary",
+                                "Negotiation" => "badge bg-warning text-dark",
+                                "Contract Sent" => "badge bg-info text-dark",
+                                "Closed Won" => "badge bg-success",
+                                "Closed Lost" => "badge bg-danger",
+                                _ => "badge bg-light text-dark"
+                            };
+
+                            <tr class="text-center">
+                                <td class="fw-semibold text-start">@deal.DealName</td>
+                                <td>@($"{deal.Value:N0} đ")</td>
+                                <td class="text-center position-relative">
+                                    @if (deal.Stage == "Closed Won")
+                                    {
+                                        <span class="badge bg-success"
+                                              style="cursor: not-allowed;"
+                                              title="Deal đã chốt, không thể thay đổi">
+                                            @deal.Stage
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        var stageStyle = deal.Stage switch
+                                        {
+                                            "Lead" => "background: linear-gradient(135deg, #e3f2fd, #bbdefb); color:#0d47a1;",
+                                            "Negotiation" => "background: linear-gradient(135deg, #ffca28, #f57f17); color:#212529;",
+                                            "Contract Sent" => "background: linear-gradient(135deg, #29b6f6, #0288d1); color:white;",
+                                            "Closed Lost" => "background: linear-gradient(135deg, #ef5350, #b71c1c); color:white;",
+                                            _ => "background: #f8f9fa; color:#212529;"
+                                        };
+
+                                        <div class="dropdown">
+                                            <span class="badge dropdown-toggle"
+                                                  style="@stageStyle"
+                                                  role="button"
+                                                  data-bs-toggle="dropdown"
+                                                  aria-expanded="false">
+                                                @deal.Stage
+                                            </span>
+                                            <ul class="dropdown-menu">
+                                                @foreach (var stage in new[] { "Lead", "Negotiation", "Contract Sent", "Closed Won", "Closed Lost" })
+                                                {
+                                                    if (stage != deal.Stage)
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item stage-option"
+                                                               data-stage="@stage"
+                                                               href="javascript:void(0)"
+                                                               onclick="confirmStageChange(@deal.DealID, '@stage', '@deal.Stage')">
+                                                                @stage
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </td>
+
+
+                                <td>
+                                    <a href="javascript:void(0)" class="text-decoration-none text-primary fw-semibold"
+                                       onclick="showCustomerDetail(@deal.CustomerID)">
+                                        @deal.Customer?.CompanyName
+                                    </a>
+                                </td>
+                                <td>@deal.Deadline?.ToShortDateString()</td>
+                                <td class="text-muted text-start" style="white-space: pre-wrap; max-width: 350px;">
+                                    @deal.Notes
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer bg-transparent py-3">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                        <a class="page-link shadow-sm"
+                           href="?pageNumber=@(Model.PageNumber - 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">← Trước</a>
+                    </li>
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link shadow-sm"
+                               href="?pageNumber=@i&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link shadow-sm"
+                           href="?pageNumber=@(Model.PageNumber + 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">Sau →</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal khách hàng -->
+<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title fw-bold" id="customerModalLabel">Thông tin khách hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerDetailContent" class="p-2 text-center text-muted">Đang tải thông tin khách hàng...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Giữ phong cách gradient và glass trong suốt hiện đại */
+        .btn-gradient {
+            background: linear-gradient(45deg, #007bff, #00d4ff);
+            color: white;
+            border: none;
+            transition: 0.3s;
+        }
+
+            .btn-gradient:hover {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #007bff, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9); /* sáng hơn để chữ dễ đọc */
+            border-radius: 14px;
+            color: #212529; /* chữ tối để dễ nhìn */
+        }
+
+        .bg-gradient-blue {
+            background: linear-gradient(45deg, #007bff, #00b4ff);
+        }
+
+        /* --- Thống kê nhanh: thiết kế lại theo card hiện đại --- */
+        .stat-card {
+            border-radius: 16px;
+            padding: 18px 14px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+            .stat-card h3 {
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            }
+
+            .stat-card.bg-light {
+                background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+                color: #0d47a1;
+            }
+
+            .stat-card.bg-success {
+                background: linear-gradient(135deg, #4caf50, #2e7d32);
+                color: #fff;
+            }
+
+            .stat-card.bg-warning {
+                background: linear-gradient(135deg, #ffca28, #f57f17);
+                color: #212529;
+            }
+
+            .stat-card.bg-danger {
+                background: linear-gradient(135deg, #ef5350, #b71c1c);
+                color: #fff;
+            }
+
+        /* --- Modal khách hàng --- */
+        #customerDetailContent {
+            color: #212529 !important;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .modal-content.glass-card {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: #212529 !important;
+        }
+    </style>
+}
+
+
+@section Scripts {
+    <!-- ✅ SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 🔍 Hiển thị chi tiết khách hàng trong modal
+        async function showCustomerDetail(customerId) {
+            const modal = new bootstrap.Modal(document.getElementById('customerModal'));
+            const content = document.getElementById('customerDetailContent');
+            content.innerHTML = `<p class='text-muted'>Đang tải thông tin khách hàng...</p>`;
+            modal.show();
+
+            try {
+                const res = await fetch(`/api/employee/customer/detail/${customerId}`, { credentials: 'include' });
+                if (res.status === 401) {
+                    content.innerHTML = `<p class='text-danger'>Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</p>`;
+                    return;
+                }
+                if (res.status === 404) {
+                    content.innerHTML = `<p class='text-danger'>Không tìm thấy khách hàng hoặc bạn không có quyền truy cập.</p>`;
+                    return;
+                }
+                if (!res.ok) {
+                    content.innerHTML = `<p class='text-danger'>Lỗi không xác định (mã lỗi ${res.status}).</p>`;
+                    return;
+                }
+
+                const data = await res.json();
+                content.innerHTML = `
+                    <div class="row g-3 text-start">
+                        <div class="col-md-6">
+                            <p><strong>Mã KH:</strong> ${data.customerCode || 'N/A'}</p>
+                            <p><strong>Tên công ty:</strong> ${data.companyName}</p>
+                            <p><strong>Người liên hệ:</strong> ${data.contactName || ''}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> ${data.contactEmail || 'Chưa có'}</p>
+                            <p><strong>SĐT:</strong> ${data.contactPhone || 'Chưa có'}</p>
+                            <p><strong>Ngành nghề:</strong> ${data.industry || 'N/A'}</p>
+                        </div>
+                        <div class="col-12">
+                            <p><strong>Địa chỉ:</strong> ${data.address || 'Không có'}</p>
+                            <p><strong>Ghi chú:</strong> ${data.notes || 'Không có'}</p>
+                            <p><strong>VIP:</strong> ${data.vip ? '✅ Có' : '❌ Không'}</p>
+                        </div>
+                    </div>`;
+            } catch (err) {
+                console.error(err);
+                content.innerHTML = `<p class='text-danger'>Lỗi khi tải dữ liệu khách hàng.</p>`;
+            }
+        }
+
+        // ⚡ Xác nhận đổi giai đoạn Deal
+        async function confirmStageChange(dealId, newStage, currentStage) {
+            if (currentStage === "Closed Won") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Deal đã chốt!",
+                    text: "Bạn không thể thay đổi trạng thái sau khi deal đã chốt thành công.",
+                    confirmButtonText: "Đã hiểu",
+                });
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: "Xác nhận thay đổi?",
+                html: `Bạn có chắc muốn đổi giai đoạn từ <b>${currentStage}</b> sang <b>${newStage}</b>?`,
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Đổi ngay",
+                cancelButtonText: "Hủy",
+                reverseButtons: true,
+                focusCancel: true
+            });
+
+            if (result.isConfirmed) {
+                await updateDealStage(dealId, newStage);
+            }
+        }
+
+        // 🚀 Gửi yêu cầu cập nhật giai đoạn Deal
+        async function updateDealStage(dealId, newStage) {
+            Swal.fire({
+                title: "Đang cập nhật...",
+                text: "Vui lòng chờ trong giây lát",
+                didOpen: () => Swal.showLoading(),
+                allowOutsideClick: false
+            });
+
+            try {
+                const formData = new FormData();
+                formData.append("DealIdToUpdate", dealId);
+                formData.append("NewStage", newStage);
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const res = await fetch(window.location.pathname + "?handler=UpdateStage", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                     'RequestVerificationToken': token // thêm dòng này
+                    },
+                    credentials: "include"
+                });
+
+                Swal.close();
+
+                if (res.ok) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Cập nhật thành công!",
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => location.reload());
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Cập nhật thất bại!",
+                        text: `Mã lỗi: ${res.status}`,
+                    });
+                }
+            } catch (err) {
+                console.error("Lỗi khi gửi yêu cầu cập nhật:", err);
+                Swal.fire({
+                    icon: "error",
+                    title: "Lỗi kết nối!",
+                    text: "Không thể gửi yêu cầu cập nhật giai đoạn Deal.",
+                });
+            }
+        }
+    </script>
+}
