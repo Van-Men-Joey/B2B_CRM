@@ -36,9 +36,6 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
         // Update manager input
         [BindProperty] public UpdateManagerInput UpdateMgr { get; set; } = new();
 
-        // Update role input
-        [BindProperty] public UpdateRoleInput UpdateRole { get; set; } = new();
-
         public async Task OnGetAsync()
         {
             var all = await _userService.GetAllAsync();
@@ -247,51 +244,6 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
             return RedirectToPage();
         }
 
-        // Update Role (không áp dụng cho Admin; và không được đổi sang Admin)
-        public async Task<IActionResult> OnPostUpdateRoleAsync()
-        {
-            if (!ModelState.IsValid || UpdateRole.UserID <= 0)
-            {
-                TempData["Error"] = "Thiếu thông tin cập nhật role.";
-                return RedirectToPage();
-            }
-
-            if (UpdateRole.RoleID != 1 && UpdateRole.RoleID != 2)
-            {
-                TempData["Error"] = "Không được cấp quyền Admin hoặc role không hợp lệ.";
-                return RedirectToPage();
-            }
-
-            var user = await _userService.GetByIdAsync(UpdateRole.UserID);
-            if (user == null) return NotFound();
-
-            if (IsAdminUser(user))
-            {
-                TempData["Error"] = "Không thể đổi role tài khoản Admin.";
-                return RedirectToPage();
-            }
-
-            if (user.IsDeleted)
-            {
-                TempData["Error"] = "Không thể đổi role cho tài khoản đã xóa.";
-                return RedirectToPage();
-            }
-
-            if (UpdateRole.RoleID == 1 && user.ManagerID == null)
-            {
-                TempData["Error"] = "Đổi sang Employee cần gán Manager trước.";
-                return RedirectToPage();
-            }
-
-            user.RoleID = UpdateRole.RoleID;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            int? adminId = GetCurrentUserId();
-            await _userService.UpdateUserAsync(user, adminId);
-            TempData["Success"] = "Cập nhật Role thành công.";
-            return RedirectToPage();
-        }
-
         private bool IsAdminUser(User u) =>
             u.RoleID == 3 || string.Equals(u.Role?.RoleName, "Admin", StringComparison.OrdinalIgnoreCase);
 
@@ -318,12 +270,6 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
     {
         [Required] public int UserID { get; set; }
         public int? ManagerID { get; set; }
-    }
-
-    public class UpdateRoleInput
-    {
-        [Required] public int UserID { get; set; }
-        [Required] public int RoleID { get; set; }
     }
 
     public class AdminUserControlViewModel

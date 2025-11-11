@@ -2,192 +2,237 @@
 @model Customer_Relationship_Management.Pages.Manager.Deal.IndexModel
 @{
     Layout = "_LayoutManager";
-    ViewData["Title"] = "Deal Supervision Dashboard";
+    ViewData["Title"] = "Quản lý Deal";
 }
 
-<div class="p-6 space-y-10 bg-gray-50 min-h-screen text-black">
-
-    <!-- 🌟 HEADER -->
-    <div class="flex items-center justify-between border-b pb-3">
-        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            📊 Deal Supervision Dashboard
-        </h1>
-        @if (TempData["Success"] != null)
-        {
-            <div class="text-green-600 text-sm font-semibold">@TempData["Success"]</div>
-        }
-        else if (TempData["Error"] != null)
-        {
-            <div class="text-red-600 text-sm font-semibold">@TempData["Error"]</div>
-        }
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý Deal</h2>
+            <p class="text-muted mb-0 small">Theo dõi pipeline, lọc và chuyển giao deal trong team</p>
+        </div>
+        <div class="ms-3">
+            @if (TempData["Success"] != null)
+            {
+                <span class="badge bg-success bg-opacity-75 px-3 py-2 shadow-sm">@TempData["Success"]</span>
+            }
+            else if (TempData["Error"] != null)
+            {
+                <span class="badge bg-danger bg-opacity-75 px-3 py-2 shadow-sm">@TempData["Error"]</span>
+            }
+        </div>
     </div>
 
-    <!-- 🔹 FORM LỌC DEAL -->
-    <form method="get" class="bg-white p-5 rounded-2xl shadow-md border border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Bộ lọc tìm kiếm</h2>
-        <div class="grid md:grid-cols-6 gap-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-1">Giai đoạn</label>
-                <select name="Stage" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
+    <!-- Bộ lọc -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Giai đoạn</label>
+                @{
+                    var stages = new[] { "Lead", "Negotiation", "Contract Sent", "Closed Won", "Closed Lost" };
+                }
+                <select name="Stage" class="form-select shadow-sm">
                     <option value="">-- Tất cả --</option>
-                    <option value="Lead" selected="@(Model.Stage == "Lead")">Lead</option>
-                    <option value="Negotiation" selected="@(Model.Stage == "Negotiation")">Negotiation</option>
-                    <option value="Contract Sent" selected="@(Model.Stage == "Contract Sent")">Contract Sent</option>
-                    <option value="Closed Won" selected="@(Model.Stage == "Closed Won")">Closed Won</option>
-                    <option value="Closed Lost" selected="@(Model.Stage == "Closed Lost")">Closed Lost</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-1">Giá trị tối thiểu</label>
-                <input type="number" name="MinValue" value="@Model.MinValue" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full" />
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-1">Giá trị tối đa</label>
-                <input type="number" name="MaxValue" value="@Model.MaxValue" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full" />
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-1">Deadline trước ngày</label>
-                <input type="date" name="DeadlineBefore" value="@(Model.DeadlineBefore?.ToString("yyyy-MM-dd"))" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full" />
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-800 mb-1">Nhân viên phụ trách</label>
-                <select name="SelectedEmployeeId" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
-                    <option value="">-- Tất cả --</option>
-                    @foreach (var member in Model.TeamMembers)
+                    @foreach (var s in stages)
                     {
-                        <option value="@member.UserID" selected="@(Model.SelectedEmployeeId == member.UserID)">
-                            @member.FullName
-                        </option>
+                        if (!string.IsNullOrEmpty(Model.Stage) && string.Equals(Model.Stage, s, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@s" selected>@s</option>
+                        }
+                        else
+                        {
+                            <option value="@s">@s</option>
+                        }
                     }
                 </select>
             </div>
-
-            <div class="flex items-end">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow">
-                    Lọc dữ liệu
-                </button>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Giá trị tối thiểu</label>
+                <input type="number" name="MinValue" value="@Model.MinValue" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Giá trị tối đa</label>
+                <input type="number" name="MaxValue" value="@Model.MaxValue" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Deadline trước ngày</label>
+                <input type="date" name="DeadlineBefore" value="@Model.DeadlineBefore?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Nhân viên phụ trách</label>
+                <select name="SelectedEmployeeId" class="form-select shadow-sm">
+                    <option value="">-- Tất cả --</option>
+                    @foreach (var member in Model.TeamMembers)
+                    {
+                        if (Model.SelectedEmployeeId.HasValue && Model.SelectedEmployeeId.Value == member.UserID)
+                        {
+                            <option value="@member.UserID" selected>@member.FullName</option>
+                        }
+                        else
+                        {
+                            <option value="@member.UserID">@member.FullName</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-2">
+                <button type="submit" class="btn btn-gradient-mgr w-100">Lọc</button>
             </div>
         </div>
     </form>
 
-    <!-- 🔹 PIPELINE TOÀN TEAM -->
-    <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Tổng giá trị Deal theo giai đoạn</h2>
+    <!-- Pipeline Summary -->
+    <div class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent pb-0 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0">Tổng giá trị Deal theo giai đoạn</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.PipelineSummary?.Any() == true)
+            {
+                <script>
+                    const pipelineLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Keys));
+                    const pipelineValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Values));
+                </script>
 
-        @if (Model.PipelineSummary?.Any() == true)
-        {
-            <!-- Dữ liệu biểu đồ -->
-            <script>
-                const pipelineLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Keys));
-                const pipelineValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Values));
-            </script>
-
-            <div class="grid md:grid-cols-5 gap-4 mb-6">
-                @foreach (var stage in Model.PipelineSummary)
-                {
-                    <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-200 shadow-sm">
-                        <p class="text-sm font-semibold text-gray-700">@stage.Key</p>
-                        <p class="text-xl font-bold text-blue-700">@stage.Value.ToString("N0") ₫</p>
-                    </div>
-                }
-            </div>
-
-            <!-- Canvas Chart -->
-            <div class="w-full md:w-2/3 mx-auto">
-                <canvas id="pipelineChart"></canvas>
-            </div>
-        }
-        else
-        {
-            <p class="text-gray-600 text-sm italic">Không có dữ liệu pipeline.</p>
-        }
+                <div class="row g-3 mb-3">
+                    @foreach (var stage in Model.PipelineSummary)
+                    {
+                        <div class="col-md-3 col-lg-2">
+                            <div class="p-3 rounded shadow-sm border bg-white h-100 d-flex flex-column justify-content-center text-center">
+                                <div class="small text-muted">@stage.Key</div>
+                                <div class="fw-bold text-gradient-mgr fs-6">@stage.Value.ToString("N0") ₫</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="mx-auto" style="max-width:640px">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted fst-italic mb-0">Không có dữ liệu pipeline.</p>
+            }
+        </div>
     </div>
 
-    <!-- 🔹 DANH SÁCH DEAL -->
-    <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Danh sách Deal toàn Team</h2>
-
+    <!-- Danh sách Deal -->
+    <div class="table-responsive card table-card p-3 mb-4">
+        <h6 class="fw-semibold mb-3">Danh sách Deal toàn Team</h6>
         @if (Model.TeamDeals?.Any() == true)
         {
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm text-gray-900 border border-gray-200 rounded-xl">
-                    <thead class="bg-gray-100 uppercase text-xs font-semibold">
-                        <tr>
-                            <th class="px-4 py-3 text-left">#</th>
-                            <th class="px-4 py-3 text-left">Tên Deal</th>
-                            <th class="px-4 py-3 text-left">Giá trị (₫)</th>
-                            <th class="px-4 py-3 text-left">Giai đoạn</th>
-                            <th class="px-4 py-3 text-left">Deadline</th>
-                            <th class="px-4 py-3 text-left">Nhân viên phụ trách</th>
-                            <th class="px-4 py-3 text-center">Hành động</th>
-                        </tr>
-                    </thead>
-               <tbody>
-@{
-    int stt = 1;
-}
-@foreach (var deal in Model.TeamDeals)
-{
-    var employee = Model.TeamMembers.FirstOrDefault(e => e.UserID == deal.Customer.AssignedToUserID);
-    <tr class="border-t hover:bg-gray-50 transition">
-        <td class="px-4 py-2">@deal.DealID</td>
-        <td class="px-4 py-2 font-medium">@deal.DealName</td>
-        <td class="px-4 py-2">@deal.Value.ToString("N0")</td>
-        <td class="px-4 py-2">@deal.Stage</td>
-        <td class="px-4 py-2">@deal.Deadline?.ToString("dd/MM/yyyy")</td>
-        <td class="px-4 py-2">@employee?.FullName</td>
-        <td class="px-4 py-2 text-center">
-            <!-- Ví dụ nút hành động -->
-            <form method="post" asp-page-handler="ReassignDeal" class="inline-flex items-center gap-2 justify-center">
-                <input type="hidden" name="ReassignDealId" value="@deal.DealID" />
-                <select name="NewEmployeeId" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
-                    <option value="">-- Chọn nhân viên mới --</option>
-                    @foreach (var member in Model.TeamMembers)
+            <table class="table table-hover align-middle bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Tên Deal</th>
+                        <th>Giá trị (₫)</th>
+                        <th>Giai đoạn</th>
+                        <th>Deadline</th>
+                        <th>Nhân viên phụ trách</th>
+                        <th style="width:260px">Chuyển giao</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var deal in Model.TeamDeals)
                     {
-                        <option value="@member.UserID">@member.FullName</option>
+                        var employee = Model.TeamMembers.FirstOrDefault(e => e.UserID == deal.Customer.AssignedToUserID);
+                        <tr>
+                            <td>@deal.DealID</td>
+                            <td class="fw-semibold">@deal.DealName</td>
+                            <td>@deal.Value.ToString("N0")</td>
+                            <td><span class="badge bg-secondary bg-opacity-75">@deal.Stage</span></td>
+                            <td>@deal.Deadline?.ToString("dd/MM/yyyy")</td>
+                            <td>@employee?.FullName</td>
+                            <td>
+                                <form method="post" asp-page-handler="ReassignDeal" class="d-flex gap-2">
+                                    <input type="hidden" name="ReassignDealId" value="@deal.DealID" />
+                                    <select name="NewEmployeeId" class="form-select form-select-sm">
+                                        <option value="">-- Chọn nhân viên --</option>
+                                        @foreach (var member in Model.TeamMembers)
+                                        {
+                                            <option value="@member.UserID">@member.FullName</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-gradient-mgr d-inline-flex align-items-center px-3">
+                                        Chuyển
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
                     }
-                </select>
-                <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition">
-                    Chuyển
-                </button>
-            </form>
-        </td>
-    </tr>
-}
-</tbody>
-
-                </table>
-            </div>
+                </tbody>
+            </table>
         }
         else
         {
-            <p class="text-gray-600 italic">Không có deal nào trong team.</p>
+            <p class="text-muted mb-0">Không có deal nào trong team.</p>
         }
     </div>
 
-    <!-- 🔹 FILE TÀI LIỆU DEAL -->
+    <!-- File tài liệu Deal -->
     @if (Model.DealFiles?.Any() == true)
     {
-        <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Tài liệu của Deal</h2>
-            <ul class="list-disc pl-6 text-sm text-gray-800 space-y-1">
-                @foreach (var file in Model.DealFiles)
-                {
-                    <li>
-                        <a asp-page-handler="DownloadFile" asp-route-filePath="@file" class="text-blue-700 hover:underline">
-                            @System.IO.Path.GetFileName(file)
-                        </a>
-                    </li>
-                }
-            </ul>
+        <div class="card glass-card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent pb-0">
+                <h6 class="fw-semibold mb-0">Tài liệu của Deal</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    @foreach (var file in Model.DealFiles)
+                    {
+                        <li class="mb-1">
+                            <a asp-page-handler="DownloadFile"
+                               asp-route-filePath="@file"
+                               class="text-decoration-none d-inline-flex align-items-center small text-gradient-mgr">
+                                <span class="me-2">📄</span>@System.IO.Path.GetFileName(file)
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
         </div>
     }
-
 </div>
+
+@section Styles {
+    <style>
+        .btn-gradient-mgr {
+            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            color: #fff;
+            border: none;
+            transition: .3s;
+        }
+
+            .btn-gradient-mgr:hover {
+                transform: translateY(-1px);
+                opacity: .95;
+            }
+
+        .text-gradient-mgr {
+            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 14px;
+            color: #212529;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: .75rem;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+}
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -202,20 +247,16 @@
                         label: 'Tổng giá trị (₫)',
                         data: pipelineValues,
                         borderWidth: 1,
-                        backgroundColor: 'rgba(37, 99, 235, 0.6)'
+                        backgroundColor: 'rgba(25, 135, 84, 0.6)',
+                        borderColor: '#198754'
                     }]
                 },
                 options: {
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { color: 'black' }
-                        },
-                        x: { ticks: { color: 'black' } }
+                        y: { beginAtZero: true, ticks: { color: '#212529' } },
+                        x: { ticks: { color: '#212529' } }
                     },
-                    plugins: {
-                        legend: { labels: { color: 'black' } }
-                    }
+                    plugins: { legend: { labels: { color: '#212529' } } }
                 }
             });
         }

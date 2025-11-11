@@ -211,18 +211,7 @@
                             }
                             else
                             {
-                                <form method="post" asp-page-handler="UpdateRole" class="d-flex gap-2 align-items-center js-confirm"
-                                      data-title="Cập nhật Role?"
-                                      data-text="Xác nhận đổi role cho @u.Username?"
-                                      data-icon="question"
-                                      data-confirm="#58606c">
-                                    <input type="hidden" name="UpdateRole.UserID" value="@u.UserID" />
-                                    <select class="form-select form-select-sm" name="UpdateRole.RoleID" style="min-width:160px" @(u.IsDeleted ? "disabled" : "")>
-                                        <option value="1" selected="@(u.RoleID == 1)">Employee</option>
-                                        <option value="2" selected="@(u.RoleID == 2)">Manager</option>
-                                    </select>
-                                    <button class="btn btn-sm btn-admin-gradient" @(u.IsDeleted ? "disabled" : "")>Lưu</button>
-                                </form>
+                                <span>@u.RoleName</span>
                             }
                         </td>
 

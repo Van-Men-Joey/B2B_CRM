@@ -47,36 +47,36 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @if (Model.Tasks.Any())
-                        {
-                            foreach (var t in Model.Tasks)
+                            @if (Model.Tasks.Any())
                             {
-                                <tr>
-                                    <td class="fw-semibold">@t.Title</td>
-                                    <td>@t.RelatedDeal?.DealName</td>
-                                    <td>@(t.DueDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
-                                    <td>
-                                        <span class="badge bg-@(t.Status?.ToLower() == "done" ? "success" : (t.Status?.ToLower() == "in-progress" ? "warning text-dark" : "secondary"))">
-                                            @t.Status
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        <form method="post" asp-page-handler="UpdateStatus" class="d-inline">
-                                            <input type="hidden" name="TaskIdToUpdate" value="@t.TaskID" />
-                                            <div class="btn-group btn-group-sm">
-                                                <button name="NewStatus" value="Pending" class="btn btn-outline-secondary">Pending</button>
-                                                <button name="NewStatus" value="In-Progress" class="btn btn-outline-warning text-dark">In-Progress</button>
-                                                <button name="NewStatus" value="Done" class="btn btn-outline-success">Done</button>
-                                            </div>
-                                        </form>
-                                    </td>
-                                </tr>
+                                foreach (var t in Model.Tasks)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@t.Title</td>
+                                        <td>@t.RelatedDeal?.DealName</td>
+                                        <td>@(t.DueDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                        <td>
+                                            <span class="badge bg-@(t.Status?.ToLower() == "done" ? "success" : (t.Status?.ToLower() == "in-progress" ? "warning text-dark" : "secondary"))">
+                                                @t.Status
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="post" asp-page-handler="UpdateStatus" class="d-inline">
+                                                <input type="hidden" name="TaskIdToUpdate" value="@t.TaskID" />
+                                                <div class="btn-group btn-group-sm">
+                                                    <button name="NewStatus" value="Pending" class="btn btn-outline-secondary">Pending</button>
+                                                    <button name="NewStatus" value="In-Progress" class="btn btn-outline-warning text-dark">In-Progress</button>
+                                                    <button name="NewStatus" value="Done" class="btn btn-outline-success">Done</button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
                             }
-                        }
-                        else
-                        {
-                            <tr><td colspan="5" class="text-muted text-center">Bạn chưa có công việc nào.</td></tr>
-                        }
+                            else
+                            {
+                                <tr><td colspan="5" class="text-muted text-center">Bạn chưa có công việc nào.</td></tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -162,10 +162,33 @@
 @section Styles {
     <style>
         /* Đồng bộ phong cách với trang Deal */
-        .btn-gradient { background: linear-gradient(45deg, #007bff, #00d4ff); color: #fff; border: none; transition: .3s; }
-        .btn-gradient:hover { transform: scale(1.05); opacity: .9; }
-        .text-gradient { background: linear-gradient(90deg, #007bff, #00c6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .glass-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.9); border-radius: 14px; color: #212529; }
-        .bg-gradient-blue { background: linear-gradient(45deg, #007bff, #00b4ff); }
+        .btn-gradient {
+            background: linear-gradient(45deg, #007bff, #00d4ff);
+            color: #fff;
+            border: none;
+            transition: .3s;
+        }
+
+            .btn-gradient:hover {
+                transform: scale(1.05);
+                opacity: .9;
+            }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #007bff, #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            color: #212529;
+        }
+
+        .bg-gradient-blue {
+            background: linear-gradient(45deg, #007bff, #00b4ff);
+        }
     </style>
 }

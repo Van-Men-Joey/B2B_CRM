@@ -8,11 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\Employee\" />
+    <Folder Include="Controllers\" />
     <Folder Include="Pages\Manager\Employee\" />
     <Folder Include="Pages\Profile\" />
     <Folder Include="wwwroot\css\" />
     <Folder Include="wwwroot\js\" />
+    <Folder Include="wwwroot\uploads\contracts\" />
   </ItemGroup>
 
   <ItemGroup>
