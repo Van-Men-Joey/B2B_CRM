@@ -1,4 +1,4 @@
-using Customer_Relationship_Management.Data;
+﻿using Customer_Relationship_Management.Data;
 using Customer_Relationship_Management.Models;
 using Customer_Relationship_Management.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +42,21 @@ namespace Customer_Relationship_Management.Repositories.Implements
 
         public new async System.Threading.Tasks.Task SaveChangesAsync()
         {
+            await _context.SaveChangesAsync();
+        }
+
+        public async System.Threading.Tasks.Task SoftDeleteAsync(int taskId, int currentUserId)
+        {
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.TaskID == taskId);
+            if (task == null) return;
+
+            if (task.AssignedToUserID != currentUserId)
+                throw new UnauthorizedAccessException("Bạn không có quyền xóa công việc này.");
+
+            task.IsDeleted = true;
+            task.UpdatedAt = DateTime.UtcNow;
+
+            _context.Tasks.Update(task);
             await _context.SaveChangesAsync();
         }
     }

@@ -1,5 +1,6 @@
-using Customer_Relationship_Management.Models;
+﻿using Customer_Relationship_Management.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Customer_Relationship_Management.Repositories.Interfaces
 {
@@ -7,9 +8,10 @@ namespace Customer_Relationship_Management.Repositories.Interfaces
 
     public interface ITaskRepository : IGenericRepository<ModelTask>
     {
-        System.Threading.Tasks.Task<IEnumerable<ModelTask>> GetByEmployeeAsync(int employeeId);
-        System.Threading.Tasks.Task<IEnumerable<ModelTask>> GetDueSoonAsync(int employeeId, int daysAhead = 3);
-        System.Threading.Tasks.Task UpdateAsync(ModelTask task);
-        System.Threading.Tasks.Task SaveChangesAsync();
+        Task<IEnumerable<ModelTask>> GetByEmployeeAsync(int employeeId);
+        Task<IEnumerable<ModelTask>> GetDueSoonAsync(int employeeId, int daysAhead = 3);
+        Task UpdateAsync(ModelTask task);
+        Task SaveChangesAsync();
+        Task SoftDeleteAsync(int taskId, int currentUserId);
     }
 }
