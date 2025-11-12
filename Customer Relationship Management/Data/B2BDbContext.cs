@@ -28,6 +28,8 @@ namespace Customer_Relationship_Management.Data
             // 🔹 Khai báo bảng có trigger (để EF bỏ OUTPUT clause khi INSERT/UPDATE)
             modelBuilder.Entity<Customer>()
                 .ToTable(tb => tb.HasTrigger("trg_Customers_GenerateCode")); // <-- Đặt đúng tên trigger của bảng Customers
+            modelBuilder.Entity<Contract>()
+                .ToTable(tb => tb.HasTrigger("trg_Contracts_Audit"));
 
             // 🔹 Đặt tên bảng cho Task entity
             modelBuilder.Entity<Models.Task>().ToTable("Tasks");

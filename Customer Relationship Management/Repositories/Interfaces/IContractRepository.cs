@@ -7,6 +7,6 @@ namespace Customer_Relationship_Management.Repositories.Interfaces
         Task<IEnumerable<Contract>> GetByUserAsync(int userId);
         Task<IEnumerable<Contract>> GetPendingContractsAsync();
         Task<IEnumerable<Contract>> GetByManagerAsync(int managerId);
-        Task<IEnumerable<Contract>> GetByStatusAsync(string status);    
+        Task<IEnumerable<Contract>> GetByStatusAsync(string status);
     }
 }

@@ -30,12 +30,12 @@ namespace Customer_Relationship_Management.Repositories.Implements
         }
         public async Task<IEnumerable<Contract>> GetPendingContractsAsync()
         {
-           return await _context.Contracts
-               .Include(c => c.Deal)
-               .Include(c => c.CreatedBy)
-               .Where(c => c.ApprovalStatus == "Pending" && !c.IsDeleted)
-               .OrderByDescending(c => c.CreatedAt)
-               .ToListAsync();
+            return await _context.Contracts
+                .Include(c => c.Deal)
+                .Include(c => c.CreatedBy)
+                .Where(c => c.ApprovalStatus == "Pending" && !c.IsDeleted)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
         }
         public async Task<IEnumerable<Contract>> GetByStatusAsync(string status)
         {
