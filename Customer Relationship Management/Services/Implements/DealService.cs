@@ -5,9 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Customer_Relationship_Management.Services.Implements
 {
-    /// <summary>
-    /// Triển khai nghiệp vụ cho Deal (Cơ hội kinh doanh)
-    /// </summary>
     public class DealService : IDealService
     {
         private readonly IDealRepository _dealRepository;
@@ -30,22 +27,15 @@ namespace Customer_Relationship_Management.Services.Implements
             _logger = logger;
         }
 
-        // =====================================================================
-        // 🧍‍♂️ KHU VỰC NHÂN VIÊN
-        // =====================================================================
-
         public async Task<IEnumerable<Deal>> GetDealsByEmployeeAsync(int employeeId)
             => await _dealRepository.GetDealsByEmployeeAsync(employeeId);
 
         public async Task<Deal?> GetDealByIdAsync(int dealId, int employeeId)
         {
             var deal = await _dealRepository.GetDealWithCustomerByIdAsync(dealId);
-            if (deal == null || deal.IsDeleted)
-                return null;
+            if (deal == null || deal.IsDeleted) return null;
 
-            // kiểm tra quyền nhân viên phụ trách
-            if (deal.Customer.AssignedToUserID != employeeId)
-                return null;
+            if (deal.Customer?.AssignedToUserID != employeeId) return null;
 
             return deal;
         }
@@ -60,6 +50,15 @@ namespace Customer_Relationship_Management.Services.Implements
             var customer = await _customerRepository.GetByIdAsync(deal.CustomerID);
             if (customer == null)
                 return (false, "Khách hàng không tồn tại.");
+
+            // Kiểm tra quyền sở hữu khách hàng khi tạo deal
+            // - Nếu Customer đã có AssignedToUserID: phải trùng với người tạo
+            // - Nếu Customer chưa được assign: cho phép tạo
+            if (customer.AssignedToUserID.HasValue &&
+                customer.AssignedToUserID.Value != deal.CreatedByUserID)
+            {
+                return (false, "Bạn không được phép tạo deal cho khách hàng này.");
+            }
 
             deal.CreatedAt = DateTime.UtcNow;
             deal.UpdatedAt = DateTime.UtcNow;
@@ -95,8 +94,19 @@ namespace Customer_Relationship_Management.Services.Implements
             if (existing == null || existing.IsDeleted)
                 return (false, "Deal không tồn tại.");
 
-            if (existing.Customer.AssignedToUserID != employeeId)
+            if (existing.Customer == null || existing.Customer.AssignedToUserID != employeeId)
                 return (false, "Bạn không có quyền chỉnh sửa deal này.");
+
+            // Nếu đổi khách hàng, phải kiểm tra quyền sở hữu khách hàng mới
+            if (deal.CustomerID != existing.CustomerID)
+            {
+                var newCustomer = await _customerRepository.GetByIdAsync(deal.CustomerID);
+                if (newCustomer == null)
+                    return (false, "Khách hàng không tồn tại.");
+                if (newCustomer.AssignedToUserID != employeeId)
+                    return (false, "Bạn không phụ trách khách hàng này.");
+                existing.CustomerID = deal.CustomerID;
+            }
 
             var oldData = AuditLog.ToJson(existing);
 
@@ -104,7 +114,7 @@ namespace Customer_Relationship_Management.Services.Implements
             {
                 existing.DealName = deal.DealName;
                 existing.Value = deal.Value;
-                existing.Stage = deal.Stage;
+                existing.Stage = string.IsNullOrWhiteSpace(deal.Stage) ? existing.Stage : deal.Stage!;
                 existing.Deadline = deal.Deadline;
                 existing.Notes = deal.Notes;
                 existing.UpdatedAt = DateTime.UtcNow;
@@ -197,19 +207,11 @@ namespace Customer_Relationship_Management.Services.Implements
             }
         }
 
-        // =====================================================================
-        // 👔 KHU VỰC MANAGER
-        // =====================================================================
-
         public async Task<IEnumerable<Deal>> GetTeamDealsAsync(int managerId)
             => await _dealRepository.GetTeamDealsAsync(managerId);
 
         public async Task<IEnumerable<Deal>> FilterTeamDealsAsync(
-            int managerId,
-            string? stage = null,
-            decimal? minValue = null,
-            decimal? maxValue = null,
-            DateTime? deadlineBefore = null)
+            int managerId, string? stage = null, decimal? minValue = null, decimal? maxValue = null, DateTime? deadlineBefore = null)
             => await _dealRepository.FilterTeamDealsAsync(managerId, stage, minValue, maxValue, deadlineBefore);
 
         public async Task<IDictionary<string, decimal>> GetTeamPipelineSummaryAsync(int managerId)
@@ -220,7 +222,6 @@ namespace Customer_Relationship_Management.Services.Implements
             try
             {
                 var result = await _dealRepository.ReassignDealAsync(dealId, newEmployeeId, managerId);
-
                 if (result)
                 {
                     await _auditLogService.LogAsync(

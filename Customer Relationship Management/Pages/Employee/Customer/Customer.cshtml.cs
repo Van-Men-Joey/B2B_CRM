@@ -1,6 +1,7 @@
 ﻿using Customer_Relationship_Management.Models;
 using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 
@@ -96,8 +97,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
         public async Task<IActionResult> OnGetAsync(int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
-            if (claim == null)
-                return RedirectToPage("/Account/Login");
+            if (claim == null) return RedirectToPage("/Account/Login");
 
             int userId = int.Parse(claim.Value);
             var allCustomers = await _customerService.GetCustomersForUserAsync(userId);
@@ -157,65 +157,71 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
         public async Task<JsonResult> OnGetCustomerDetailAsync(int id)
         {
             var claim = User.FindFirst("UserID");
-            if (claim == null)
-                return new JsonResult(null);
+            if (claim == null) return new JsonResult(null);
 
             int userId = int.Parse(claim.Value);
             var customer = await _customerService.GetCustomerByCustomerID_UserIDAsync(id, userId);
             return new JsonResult(customer);
         }
 
-        // POST – thêm
+        // Helper gom lỗi theo prefix
+        private static string CollectErrorsForPrefix(ModelStateDictionary modelState, string prefix)
+        {
+            return string.Join("; ",
+                modelState.Where(kvp => kvp.Key.StartsWith(prefix + ".", StringComparison.OrdinalIgnoreCase))
+                          .SelectMany(v => v.Value!.Errors)
+                          .Select(e => e.ErrorMessage)
+                          .Distinct());
+        }
+
+        // POST – thêm (chỉ validate NewCustomer)
         public async Task<IActionResult> OnPostAddAsync(int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
-            if (claim == null)
-                return RedirectToPage("/Account/Login");
+            if (claim == null) return RedirectToPage("/Account/Login");
 
             int userId = int.Parse(claim.Value);
 
-            if (!ModelState.IsValid)
+            // Chỉ validate đúng prefix NewCustomer
+            ModelState.Clear();
+            if (!TryValidateModel(NewCustomer, nameof(NewCustomer)))
             {
-                TempData["Error"] = string.Join("; ",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = CollectErrorsForPrefix(ModelState, nameof(NewCustomer));
                 return await OnGetAsync(pageNumber);
             }
 
             var customer = new Models.Customer
             {
-                CompanyName = NewCustomer.CompanyName,
-                ContactName = NewCustomer.ContactName,
-                ContactEmail = NewCustomer.ContactEmail,
-                ContactPhone = NewCustomer.ContactPhone,
-                Industry = NewCustomer.Industry,
-                Scale = NewCustomer.Scale,
-                Address = NewCustomer.Address,
-                ContactTitle = NewCustomer.ContactTitle,
-                Notes = NewCustomer.Notes
+                CompanyName = NewCustomer.CompanyName?.Trim() ?? string.Empty,
+                ContactName = NewCustomer.ContactName?.Trim() ?? string.Empty,
+                ContactEmail = string.IsNullOrWhiteSpace(NewCustomer.ContactEmail) ? null : NewCustomer.ContactEmail.Trim(),
+                ContactPhone = string.IsNullOrWhiteSpace(NewCustomer.ContactPhone) ? null : NewCustomer.ContactPhone.Trim(),
+                Industry = string.IsNullOrWhiteSpace(NewCustomer.Industry) ? null : NewCustomer.Industry.Trim(),
+                Scale = string.IsNullOrWhiteSpace(NewCustomer.Scale) ? null : NewCustomer.Scale.Trim(),
+                Address = string.IsNullOrWhiteSpace(NewCustomer.Address) ? null : NewCustomer.Address.Trim(),
+                ContactTitle = string.IsNullOrWhiteSpace(NewCustomer.ContactTitle) ? null : NewCustomer.ContactTitle.Trim(),
+                Notes = string.IsNullOrWhiteSpace(NewCustomer.Notes) ? null : NewCustomer.Notes.Trim()
             };
 
             var result = await _customerService.AddCustomerAsync(customer, userId);
-            if (result.Success)
-                TempData["Success"] = result.Message;
-            else
-                TempData["Error"] = result.Message;
+            TempData[result.Success ? "Success" : "Error"] = result.Message;
 
             return RedirectToPage(new { pageNumber });
         }
 
-        // POST – sửa
+        // POST – sửa (chỉ validate EditCustomer)
         public async Task<IActionResult> OnPostEditAsync(int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
-            if (claim == null)
-                return RedirectToPage("/Account/Login");
+            if (claim == null) return RedirectToPage("/Account/Login");
 
             int userId = int.Parse(claim.Value);
 
-            if (!ModelState.IsValid)
+            // Chỉ validate đúng prefix EditCustomer
+            ModelState.Clear();
+            if (!TryValidateModel(EditCustomer, nameof(EditCustomer)))
             {
-                TempData["Error"] = string.Join("; ",
-                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = CollectErrorsForPrefix(ModelState, nameof(EditCustomer));
                 return RedirectToPage(new { pageNumber });
             }
 
@@ -243,15 +249,15 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
                 return RedirectToPage(new { pageNumber });
             }
 
-            customer.CompanyName = EditCustomer.CompanyName;
-            customer.ContactName = EditCustomer.ContactName;
-            customer.ContactEmail = EditCustomer.ContactEmail;
-            customer.ContactPhone = EditCustomer.ContactPhone;
-            customer.Industry = EditCustomer.Industry;
-            customer.Scale = EditCustomer.Scale;
-            customer.Address = EditCustomer.Address;
-            customer.ContactTitle = EditCustomer.ContactTitle;
-            customer.Notes = EditCustomer.Notes;
+            customer.CompanyName = EditCustomer.CompanyName.Trim();
+            customer.ContactName = EditCustomer.ContactName.Trim();
+            customer.ContactEmail = string.IsNullOrWhiteSpace(EditCustomer.ContactEmail) ? null : EditCustomer.ContactEmail.Trim();
+            customer.ContactPhone = string.IsNullOrWhiteSpace(EditCustomer.ContactPhone) ? null : EditCustomer.ContactPhone.Trim();
+            customer.Industry = string.IsNullOrWhiteSpace(EditCustomer.Industry) ? null : EditCustomer.Industry.Trim();
+            customer.Scale = string.IsNullOrWhiteSpace(EditCustomer.Scale) ? null : EditCustomer.Scale.Trim();
+            customer.Address = string.IsNullOrWhiteSpace(EditCustomer.Address) ? null : EditCustomer.Address.Trim();
+            customer.ContactTitle = string.IsNullOrWhiteSpace(EditCustomer.ContactTitle) ? null : EditCustomer.ContactTitle.Trim();
+            customer.Notes = string.IsNullOrWhiteSpace(EditCustomer.Notes) ? null : EditCustomer.Notes.Trim();
 
             bool updated = await _customerService.UpdateCustomerAsync(customer, userId);
             TempData[updated ? "Success" : "Error"] = updated
@@ -265,8 +271,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
         public async Task<IActionResult> OnPostDeleteAsync(int id, int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
-            if (claim == null)
-                return RedirectToPage("/Account/Login");
+            if (claim == null) return RedirectToPage("/Account/Login");
 
             int userId = int.Parse(claim.Value);
             bool deleted = await _customerService.DeleteCustomerAsync(id, userId);

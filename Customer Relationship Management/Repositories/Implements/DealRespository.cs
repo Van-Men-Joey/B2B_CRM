@@ -77,11 +77,14 @@ namespace Customer_Relationship_Management.Repositories.Implements
         /// </summary>
         public async Task SoftDeleteAsync(int dealId, int currentUserId)
         {
-            var deal = await _context.Deals.FirstOrDefaultAsync(d => d.DealID == dealId);
+            var deal = await _context.Deals
+                .Include(d => d.Customer)
+                .FirstOrDefaultAsync(d => d.DealID == dealId);
+
             if (deal == null)
                 return;
 
-            if (deal.Customer.AssignedToUserID != currentUserId)
+            if (deal.Customer == null || deal.Customer.AssignedToUserID != currentUserId)
                 throw new UnauthorizedAccessException("Bạn không có quyền xóa deal này.");
 
             deal.IsDeleted = true;
