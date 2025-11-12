@@ -30,15 +30,10 @@
         </div>
     }
 
-    <!-- 1) Heading danh sách khách hàng -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold text-gradient mb-0">Danh sách khách hàng của bạn</h2>
-            <p class="text-muted mb-0 small">Quản lý và theo dõi thông tin khách hàng của bạn</p>
-        </div>
-        <a href="#addCustomerSection" class="btn btn-gradient shadow-sm px-4">
-            Thêm khách hàng
-        </a>
+    <!-- 1) Heading danh sách khách hàng (đã bỏ nút Thêm khách hàng) -->
+    <div class="mb-4">
+        <h2 class="fw-bold text-gradient mb-0">Danh sách khách hàng</h2>
+        <p class="text-muted mb-0 small">Quản lý và theo dõi thông tin khách hàng của bạn</p>
     </div>
 
     <!-- 2) Thêm khách hàng mới -->
@@ -553,7 +548,6 @@
         const addModal = addModalEl ? new bootstrap.Modal(addModalEl) : null;
 
         addForm?.addEventListener('submit', (e) => {
-            // Nếu có lỗi validation client-side, để mặc định
             if (!addForm.checkValidity()) return;
             e.preventDefault();
 
