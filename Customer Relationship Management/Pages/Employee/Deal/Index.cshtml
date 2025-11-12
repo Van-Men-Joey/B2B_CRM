@@ -1,99 +1,155 @@
 ﻿@page
-@model Customer_Relationship_Management.Pages.Employee.Deal.IndexModel
+@model Customer_Relationship_Management.Pages.Employee.Deal.DealModel
 @{
     Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
     ViewData["Title"] = "Deals";
     ViewData["ActiveMenu"] = "Deal";
 }
 
-<!-- Giao diện chính -->
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold text-gradient mb-0">Danh sách Deal của bạn</h2>
-            <p class="text-muted mb-0 small">Theo dõi tiến độ và kết quả các cơ hội kinh doanh</p>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <a asp-page="/Employee/Deal/Create" class="btn btn-gradient shadow-sm px-4">
-            Tạo Deal mới
-        </a>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="mb-4">
+        <h2 class="fw-bold text-gradient mb-0">Danh sách Deal của bạn</h2>
+        <p class="text-muted mb-0 small">Theo dõi tiến độ và kết quả các cơ hội kinh doanh</p>
     </div>
 
-    <!-- Bộ lọc -->
+    <!-- Add Deal -->
+    <div id="addDealSection" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+            <h5 class="mb-0">Thêm Deal mới</h5>
+        </div>
+        <div class="card-body">
+            <!-- LƯU Ý: tất cả asp-for phải là AddDeal.* -->
+            <form id="addDealForm" method="post" asp-page-handler="Add" class="row g-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="col-md-6">
+                    <label asp-for="AddDeal.DealName" class="form-label fw-semibold">Tên Deal</label>
+                    <input asp-for="AddDeal.DealName" class="form-control" placeholder="Nhập tên deal..." />
+                    <span asp-validation-for="AddDeal.DealName" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="AddDeal.CustomerID" class="form-label fw-semibold">Khách hàng</label>
+                    <select asp-for="AddDeal.CustomerID" class="form-select">
+                        <option value="0">-- Chọn khách hàng --</option>
+                        @foreach (var c in Model.Customers)
+                        {
+                            <option value="@c.CustomerID">@c.CustomerCode - @c.CompanyName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="AddDeal.CustomerID" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="AddDeal.Value" class="form-label fw-semibold">Giá trị Deal (VNĐ)</label>
+                    <input asp-for="AddDeal.Value" type="number" min="1" class="form-control" placeholder="Nhập giá trị..." />
+                    <span asp-validation-for="AddDeal.Value" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="AddDeal.Deadline" class="form-label fw-semibold">Hạn chót</label>
+                    <input asp-for="AddDeal.Deadline" type="date" class="form-control" />
+                    <span asp-validation-for="AddDeal.Deadline" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="AddDeal.Stage" class="form-label fw-semibold">Giai đoạn</label>
+                    <select asp-for="AddDeal.Stage" class="form-select">
+                        <option value="">(mặc định Lead)</option>
+                        @foreach (var stage in new[] { "Lead", "Negotiation", "Contract Sent", "Closed Won", "Closed Lost" })
+                        {
+                            <option value="@stage">@stage</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="AddDeal.Notes" class="form-label fw-semibold">Ghi chú</label>
+                    <textarea asp-for="AddDeal.Notes" class="form-control" rows="2" placeholder="Thêm ghi chú nếu có..."></textarea>
+                </div>
+
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-gradient px-4" id="btnAddDeal">Thêm Deal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats grid (đã responsive) -->
+    <div class="stats-grid mb-4">
+        <div class="stat-box stat-total">
+            <span class="label">Tổng Deal</span>
+            <span class="value">@Model.Deals.Count()</span>
+        </div>
+        <div class="stat-box stat-won">
+            <span class="label">Đã chốt (Won)</span>
+            <span class="value">@Model.Deals.Count(d => d.Stage == "Closed Won")</span>
+        </div>
+        <div class="stat-box stat-negotiation">
+            <span class="label">Thương lượng</span>
+            <span class="value">@Model.Deals.Count(d => d.Stage == "Negotiation")</span>
+        </div>
+        <div class="stat-box stat-lost">
+            <span class="label">Mất Deal</span>
+            <span class="value">@Model.Deals.Count(d => d.Stage == "Closed Lost")</span>
+        </div>
+    </div>
+
+    <!-- Filters -->
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-body row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Giai đoạn</label>
                 <select name="StageFilter" class="form-select">
                     <option value="">-- Tất cả --</option>
-                    <option value="Lead" selected="@(Model.StageFilter == "Lead")">Lead</option>
-                    <option value="Negotiation" selected="@(Model.StageFilter == "Negotiation")">Negotiation</option>
-                    <option value="Contract Sent" selected="@(Model.StageFilter == "Contract Sent")">Contract Sent</option>
-                    <option value="Closed Won" selected="@(Model.StageFilter == "Closed Won")">Closed Won</option>
-                    <option value="Closed Lost" selected="@(Model.StageFilter == "Closed Lost")">Closed Lost</option>
+                    @foreach (var stage in new[] { "Lead", "Negotiation", "Contract Sent", "Closed Won", "Closed Lost" })
+                    {
+                        <option value="@stage" selected="@(Model.StageFilter == stage)">@stage</option>
+                    }
                 </select>
             </div>
-
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Từ hạn chót</label>
                 <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
             </div>
-
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Đến hạn chót</label>
                 <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
             </div>
-
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Tìm kiếm</label>
-                <input type="text" name="Keyword" value="@Model.Keyword"
-                       placeholder="Tên deal hoặc khách hàng..." class="form-control shadow-sm" />
+                <input type="text" name="Keyword" value="@Model.Keyword" placeholder="Tên deal hoặc khách hàng..." class="form-control shadow-sm" />
             </div>
-
             <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-gradient px-4">
-                    Lọc
-                </button>
-                <a href="@Url.Page("/Employee/Deal/Index")" class="btn btn-gradient px-4 ms-2">
-                    Đặt lại
-                </a>
-
+                <button type="submit" class="btn btn-gradient px-4">Lọc</button>
+                <a asp-page="/Employee/Deal/Deal" class="btn btn-gradient px-4 ms-2">Đặt lại</a>
             </div>
         </div>
     </form>
 
-
-
-    <!-- Thống kê nhanh -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3 col-6">
-            <div class="stat-card bg-light shadow-sm">
-                <h6 class="text-secondary mb-1">Tổng Deal</h6>
-                <h3 class="fw-bold">@Model.Deals.Count()</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card bg-success text-white shadow-sm">
-                <h6 class="mb-1">Đã chốt (Won)</h6>
-                <h3>@Model.Deals.Count(d => d.Stage == "Closed Won")</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card bg-warning text-dark shadow-sm">
-                <h6 class="mb-1">Thương lượng</h6>
-                <h3>@Model.Deals.Count(d => d.Stage == "Negotiation")</h3>
-            </div>
-        </div>
-        <div class="col-md-3 col-6">
-            <div class="stat-card bg-danger text-white shadow-sm">
-                <h6 class="mb-1">Mất Deal</h6>
-                <h3>@Model.Deals.Count(d => d.Stage == "Closed Lost")</h3>
-            </div>
-        </div>
-    </div>
-
-    <!-- Danh sách Deal -->
+    <!-- List -->
     <div class="card border-0 shadow-lg glass-card">
         <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
             <h5 class="mb-0 fw-semibold">Danh sách Deal</h5>
@@ -109,60 +165,41 @@
                         <th>Khách hàng</th>
                         <th>Hạn chót</th>
                         <th>Ghi chú</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!Model.Deals.Any())
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                Không có deal nào để hiển thị.
-                            </td>
+                            <td colspan="7" class="text-center text-muted py-4">Không có deal nào để hiển thị.</td>
                         </tr>
                     }
                     else
                     {
                         @foreach (var deal in Model.Deals)
                         {
-                            var stageColor = deal.Stage switch
+                            var stageStyle = deal.Stage switch
                             {
-                                "Lead" => "badge bg-secondary",
-                                "Negotiation" => "badge bg-warning text-dark",
-                                "Contract Sent" => "badge bg-info text-dark",
-                                "Closed Won" => "badge bg-success",
-                                "Closed Lost" => "badge bg-danger",
-                                _ => "badge bg-light text-dark"
+                                "Lead" => "background: linear-gradient(135deg, #e3f2fd, #bbdefb); color:#0d47a1;",
+                                "Negotiation" => "background: linear-gradient(135deg, #ffca28, #f57f17); color:#212529;",
+                                "Contract Sent" => "background: linear-gradient(135deg, #29b6f6, #0288d1); color:white;",
+                                "Closed Won" => "background: linear-gradient(135deg, #4caf50, #2e7d32); color:white;",
+                                "Closed Lost" => "background: linear-gradient(135deg, #ef5350, #b71c1c); color:white;",
+                                _ => "background:#f8f9fa;color:#212529;"
                             };
-
                             <tr class="text-center">
                                 <td class="fw-semibold text-start">@deal.DealName</td>
                                 <td>@($"{deal.Value:N0} đ")</td>
-                                <td class="text-center position-relative">
+                                <td class="text-center">
                                     @if (deal.Stage == "Closed Won")
                                     {
-                                        <span class="badge bg-success"
-                                              style="cursor: not-allowed;"
-                                              title="Deal đã chốt, không thể thay đổi">
-                                            @deal.Stage
-                                        </span>
+                                        <span class="badge bg-success">Closed Won</span>
                                     }
                                     else
                                     {
-                                        var stageStyle = deal.Stage switch
-                                        {
-                                            "Lead" => "background: linear-gradient(135deg, #e3f2fd, #bbdefb); color:#0d47a1;",
-                                            "Negotiation" => "background: linear-gradient(135deg, #ffca28, #f57f17); color:#212529;",
-                                            "Contract Sent" => "background: linear-gradient(135deg, #29b6f6, #0288d1); color:white;",
-                                            "Closed Lost" => "background: linear-gradient(135deg, #ef5350, #b71c1c); color:white;",
-                                            _ => "background: #f8f9fa; color:#212529;"
-                                        };
-
                                         <div class="dropdown">
-                                            <span class="badge dropdown-toggle"
-                                                  style="@stageStyle"
-                                                  role="button"
-                                                  data-bs-toggle="dropdown"
-                                                  aria-expanded="false">
+                                            <span class="badge dropdown-toggle" style="@stageStyle" role="button" data-bs-toggle="dropdown">
                                                 @deal.Stage
                                             </span>
                                             <ul class="dropdown-menu">
@@ -170,31 +207,29 @@
                                                 {
                                                     if (stage != deal.Stage)
                                                     {
-                                                        <li>
-                                                            <a class="dropdown-item stage-option"
-                                                               data-stage="@stage"
-                                                               href="javascript:void(0)"
-                                                               onclick="confirmStageChange(@deal.DealID, '@stage', '@deal.Stage')">
-                                                                @stage
-                                                            </a>
-                                                        </li>
+                                                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="confirmStageChange(@deal.DealID, '@stage', '@deal.Stage')">@stage</a></li>
                                                     }
                                                 }
                                             </ul>
                                         </div>
                                     }
                                 </td>
-
-
-                                <td>
-                                    <a href="javascript:void(0)" class="text-decoration-none text-primary fw-semibold"
-                                       onclick="showCustomerDetail(@deal.CustomerID)">
-                                        @deal.Customer?.CompanyName
-                                    </a>
-                                </td>
-                                <td>@deal.Deadline?.ToShortDateString()</td>
-                                <td class="text-muted text-start" style="white-space: pre-wrap; max-width: 350px;">
-                                    @deal.Notes
+                                <td class="text-start">@deal.Customer?.CompanyName</td>
+                                <td>@deal.Deadline?.ToString("yyyy-MM-dd")</td>
+                                <td class="text-muted text-start" style="white-space: pre-wrap; max-width: 350px;">@deal.Notes</td>
+                                <td class="text-nowrap">
+                                    <button class="btn btn-sm btn-outline-primary me-1 btn-view"
+                                            data-detail-url="@Url.Page("./Deal", null, new { handler = "DealDetail", id = deal.DealID }, null)">
+                                        Xem
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning me-1 btn-edit"
+                                            data-detail-url="@Url.Page("./Deal", null, new { handler = "DealDetail", id = deal.DealID }, null)">
+                                        Sửa
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-delete"
+                                            data-id="@deal.DealID" data-name="@deal.DealName">
+                                        Xóa
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -203,43 +238,169 @@
             </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="card-footer bg-transparent py-3">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mb-0">
-                    <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
-                        <a class="page-link shadow-sm"
-                           href="?pageNumber=@(Model.PageNumber - 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">← Trước</a>
-                    </li>
-
-                    @for (int i = 1; i <= Model.TotalPages; i++)
-                    {
-                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer bg-transparent py-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
                             <a class="page-link shadow-sm"
-                               href="?pageNumber=@i&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">@i</a>
+                               href="?pageNumber=@(Model.PageNumber - 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword&FromDate=@Model.FromDate:yyyy-MM-dd&ToDate=@Model.ToDate:yyyy-MM-dd">← Trước</a>
                         </li>
-                    }
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link shadow-sm"
+                                   href="?pageNumber=@i&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword&FromDate=@Model.FromDate:yyyy-MM-dd&ToDate=@Model.ToDate:yyyy-MM-dd">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link shadow-sm"
+                               href="?pageNumber=@(Model.PageNumber + 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword&FromDate=@Model.FromDate:yyyy-MM-dd&ToDate=@Model.ToDate:yyyy-MM-dd">Sau →</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
 
-                    <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
-                        <a class="page-link shadow-sm"
-                           href="?pageNumber=@(Model.PageNumber + 1)&StageFilter=@Model.StageFilter&Keyword=@Model.Keyword">Sau →</a>
-                    </li>
-                </ul>
-            </nav>
+<!-- Modal: Xem chi tiết -->
+<div class="modal fade" id="dealDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title fw-bold">Chi tiết Deal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dealDetailContent" class="p-2 text-start text-muted">Đang tải...</div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal khách hàng -->
-<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+<!-- Modal: Sửa Deal -->
+<div class="modal fade" id="editDealModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
             <div class="modal-header bg-gradient-blue text-white">
-                <h5 class="modal-title fw-bold" id="customerModalLabel">Thông tin khách hàng</h5>
+                <h5 class="modal-title fw-bold">Chỉnh sửa Deal</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="customerDetailContent" class="p-2 text-center text-muted">Đang tải thông tin khách hàng...</div>
+                <form id="editDealForm" method="post" asp-page-handler="Edit" class="row g-3">
+                    <input type="hidden" asp-for="EditDeal.DealID" />
+
+                    <div class="col-md-6">
+                        <label asp-for="EditDeal.DealName" class="form-label fw-semibold">Tên Deal</label>
+                        <input asp-for="EditDeal.DealName" class="form-control" />
+                        <span asp-validation-for="EditDeal.DealName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EditDeal.CustomerID" class="form-label fw-semibold">Khách hàng</label>
+                        <select asp-for="EditDeal.CustomerID" class="form-select">
+                            <option value="">-- Chọn khách hàng --</option>
+                            @foreach (var c in Model.Customers)
+                            {
+                                <option value="@c.CustomerID">@c.CustomerCode - @c.CompanyName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="EditDeal.CustomerID" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EditDeal.Value" class="form-label fw-semibold">Giá trị Deal (VNĐ)</label>
+                        <input asp-for="EditDeal.Value" type="number" min="0" class="form-control" />
+                        <span asp-validation-for="EditDeal.Value" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EditDeal.Deadline" class="form-label fw-semibold">Hạn chót</label>
+                        <input asp-for="EditDeal.Deadline" type="date" class="form-control" />
+                        <span asp-validation-for="EditDeal.Deadline" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EditDeal.Stage" class="form-label fw-semibold">Giai đoạn</label>
+                        <select asp-for="EditDeal.Stage" class="form-select">
+                            @foreach (var stage in new[] { "Lead", "Negotiation", "Contract Sent", "Closed Won", "Closed Lost" })
+                            {
+                                <option value="@stage">@stage</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="EditDeal.Notes" class="form-label fw-semibold">Ghi chú</label>
+                        <textarea asp-for="EditDeal.Notes" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-warning px-4" id="btnEditDeal">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Thêm -->
+<div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận thêm Deal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmAddContent" class="text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gradient" id="confirmAddBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Sửa -->
+<div class="modal fade" id="confirmEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận cập nhật Deal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmEditContent" class="text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gradient" id="confirmEditBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Xóa -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận xóa Deal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa Deal: <strong id="deleteDealName"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="post" asp-page-handler="Delete" class="d-none">
+                    <input type="hidden" name="id" id="deleteDealId" />
+                </form>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
             </div>
         </div>
     </div>
@@ -247,160 +408,256 @@
 
 @section Styles {
     <style>
-        /* Giữ phong cách gradient và glass trong suốt hiện đại */
         .btn-gradient {
-            background: linear-gradient(45deg, #007bff, #00d4ff);
-            color: white;
+            background: linear-gradient(45deg,#007bff,#00d4ff);
+            color: #fff;
             border: none;
-            transition: 0.3s;
+            transition: .3s
         }
 
             .btn-gradient:hover {
                 transform: scale(1.05);
-                opacity: 0.9;
+                opacity: .9
             }
 
         .text-gradient {
-            background: linear-gradient(90deg, #007bff, #00c6ff);
+            background: linear-gradient(90deg,#007bff,#00c6ff);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: transparent
         }
 
         .glass-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.9); /* sáng hơn để chữ dễ đọc */
+            background: rgba(255,255,255,.9);
             border-radius: 14px;
-            color: #212529; /* chữ tối để dễ nhìn */
+            color: #212529
         }
 
         .bg-gradient-blue {
-            background: linear-gradient(45deg, #007bff, #00b4ff);
+            background: linear-gradient(45deg,#007bff,#00b4ff)
         }
 
-        /* --- Thống kê nhanh: thiết kế lại theo card hiện đại --- */
-        .stat-card {
-            border-radius: 16px;
-            padding: 18px 14px;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            color: #fff;
-            transition: all 0.3s ease;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+            gap: 14px
         }
 
-            .stat-card h3 {
-                font-weight: 700;
-                margin: 0;
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 18px 16px;
+            border-radius: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+            font-weight: 600;
+            transition: .25s;
+            min-height: 100px;
+            text-align: center
+        }
+
+            .stat-box .label {
+                font-size: .9rem;
+                opacity: .9;
+                margin-bottom: 4px
             }
 
-            .stat-card:hover {
+            .stat-box .value {
+                font-size: 1.9rem;
+                font-weight: 700
+            }
+
+            .stat-box:hover {
                 transform: translateY(-4px);
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                box-shadow: 0 8px 18px rgba(0,0,0,.12)
             }
 
-            .stat-card.bg-light {
-                background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-                color: #0d47a1;
-            }
-
-            .stat-card.bg-success {
-                background: linear-gradient(135deg, #4caf50, #2e7d32);
-                color: #fff;
-            }
-
-            .stat-card.bg-warning {
-                background: linear-gradient(135deg, #ffca28, #f57f17);
-                color: #212529;
-            }
-
-            .stat-card.bg-danger {
-                background: linear-gradient(135deg, #ef5350, #b71c1c);
-                color: #fff;
-            }
-
-        /* --- Modal khách hàng --- */
-        #customerDetailContent {
-            color: #212529 !important;
-            background-color: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            padding: 12px;
-            text-align: left;
+        .stat-total {
+            background: linear-gradient(135deg,#e3f2fd,#cfe8ff);
+            color: #0d47a1
         }
 
-        .modal-content.glass-card {
-            background: rgba(255, 255, 255, 0.95) !important;
-            color: #212529 !important;
+        .stat-won {
+            background: linear-gradient(135deg,#4caf50,#2e7d32);
+            color: #fff
+        }
+
+        .stat-negotiation {
+            background: linear-gradient(135deg,#ffca28,#f57f17);
+            color: #212529
+        }
+
+        .stat-lost {
+            background: linear-gradient(135deg,#ef5350,#c62828);
+            color: #fff
         }
     </style>
 }
 
-
 @section Scripts {
-    <!-- ✅ SweetAlert2 CDN -->
+    <partial name="_ValidationScriptsPartial" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
-        // 🔍 Hiển thị chi tiết khách hàng trong modal
-        async function showCustomerDetail(customerId) {
-            const modal = new bootstrap.Modal(document.getElementById('customerModal'));
-            const content = document.getElementById('customerDetailContent');
-            content.innerHTML = `<p class='text-muted'>Đang tải thông tin khách hàng...</p>`;
-            modal.show();
+        const $ = (s, r=document)=>r.querySelector(s);
+        const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-            try {
-                const res = await fetch(`/api/employee/customer/detail/${customerId}`, { credentials: 'include' });
-                if (res.status === 401) {
-                    content.innerHTML = `<p class='text-danger'>Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</p>`;
-                    return;
-                }
-                if (res.status === 404) {
-                    content.innerHTML = `<p class='text-danger'>Không tìm thấy khách hàng hoặc bạn không có quyền truy cập.</p>`;
-                    return;
-                }
-                if (!res.ok) {
-                    content.innerHTML = `<p class='text-danger'>Lỗi không xác định (mã lỗi ${res.status}).</p>`;
-                    return;
-                }
+        // Event delegation cho các nút thao tác
+        document.addEventListener('click', async (e) => {
+            const viewBtn = e.target.closest('.btn-view');
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
 
-                const data = await res.json();
-                content.innerHTML = `
-                    <div class="row g-3 text-start">
-                        <div class="col-md-6">
-                            <p><strong>Mã KH:</strong> ${data.customerCode || 'N/A'}</p>
-                            <p><strong>Tên công ty:</strong> ${data.companyName}</p>
-                            <p><strong>Người liên hệ:</strong> ${data.contactName || ''}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Email:</strong> ${data.contactEmail || 'Chưa có'}</p>
-                            <p><strong>SĐT:</strong> ${data.contactPhone || 'Chưa có'}</p>
-                            <p><strong>Ngành nghề:</strong> ${data.industry || 'N/A'}</p>
-                        </div>
-                        <div class="col-12">
-                            <p><strong>Địa chỉ:</strong> ${data.address || 'Không có'}</p>
-                            <p><strong>Ghi chú:</strong> ${data.notes || 'Không có'}</p>
-                            <p><strong>VIP:</strong> ${data.vip ? '✅ Có' : '❌ Không'}</p>
-                        </div>
-                    </div>`;
-            } catch (err) {
-                console.error(err);
-                content.innerHTML = `<p class='text-danger'>Lỗi khi tải dữ liệu khách hàng.</p>`;
-            }
-        }
-
-        // ⚡ Xác nhận đổi giai đoạn Deal
-        async function confirmStageChange(dealId, newStage, currentStage) {
-            if (currentStage === "Closed Won") {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Deal đã chốt!",
-                    text: "Bạn không thể thay đổi trạng thái sau khi deal đã chốt thành công.",
-                    confirmButtonText: "Đã hiểu",
-                });
+            if (viewBtn) {
+                const url = viewBtn.getAttribute('data-detail-url');
+                $('#dealDetailContent').innerHTML = 'Đang tải...';
+                new bootstrap.Modal(document.getElementById('dealDetailModal')).show();
+                try {
+                    const res = await fetch(url, { credentials: 'include' });
+                    const data = await res.json();
+                    if (!data) {
+                        $('#dealDetailContent').innerHTML = '<div class="text-danger">Không thể tải dữ liệu deal.</div>';
+                        return;
+                    }
+                    $('#dealDetailContent').innerHTML = `
+                        <div class="row g-3 text-start">
+                            <div class="col-md-6">
+                                <p><strong>Tên Deal:</strong> ${data.dealName || ''}</p>
+                                <p><strong>Giá trị:</strong> ${(data.value ?? 0).toLocaleString()} đ</p>
+                                <p><strong>Giai đoạn:</strong> ${data.stage || ''}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Khách hàng:</strong> ${data.customer?.companyName || ''}</p>
+                                <p><strong>Hạn chót:</strong> ${data.deadline ? new Date(data.deadline).toISOString().slice(0,10) : '—'}</p>
+                                <p><strong>Tạo bởi:</strong> ${data.createdByUserID || ''}</p>
+                            </div>
+                            <div class="col-12">
+                                <p><strong>Ghi chú:</strong> ${data.notes || 'Không có'}</p>
+                            </div>
+                        </div>`;
+                } catch {
+                    $('#dealDetailContent').innerHTML = '<div class="text-danger">Lỗi khi tải dữ liệu deal.</div>';
+                }
                 return;
             }
 
+            if (editBtn) {
+                const url = editBtn.getAttribute('data-detail-url');
+                try {
+                    const res = await fetch(url, { credentials: 'include' });
+                    const data = await res.json();
+                    if (!data) { alert('Không thể tải dữ liệu deal để chỉnh sửa.'); return; }
+                    $('#editDealForm input[name="EditDeal.DealID"]').value = data.dealID;
+                    $('#editDealForm input[name="EditDeal.DealName"]').value = data.dealName || '';
+                    $('#editDealForm select[name="EditDeal.CustomerID"]').value = data.customerID || '';
+                    $('#editDealForm input[name="EditDeal.Value"]').value = data.value ?? 0;
+                    $('#editDealForm input[name="EditDeal.Deadline"]').value = data.deadline ? new Date(data.deadline).toISOString().slice(0,10) : '';
+                    $('#editDealForm select[name="EditDeal.Stage"]').value = data.stage || 'Lead';
+                    $('#editDealForm textarea[name="EditDeal.Notes"]').value = data.notes || '';
+                    new bootstrap.Modal(document.getElementById('editDealModal')).show();
+                } catch {
+                    alert('Lỗi khi tải dữ liệu deal để chỉnh sửa.');
+                }
+                return;
+            }
+
+            if (deleteBtn) {
+                const id = deleteBtn.getAttribute('data-id');
+                const name = deleteBtn.getAttribute('data-name');
+                $('#deleteDealId').value = id;
+                $('#deleteDealName').textContent = name || '';
+                new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+                return;
+            }
+        });
+
+        // Submit Delete
+        $('#confirmDeleteBtn')?.addEventListener('click', () => $('#deleteForm').submit());
+
+        // Chặn vòng lặp submit khi xác nhận thêm
+        const addForm = $('#addDealForm');
+        const addConfirmModal = new bootstrap.Modal(document.getElementById('confirmAddModal'));
+        let bypassAddConfirm = false;
+        addForm?.addEventListener('submit', (e) => {
+            if (bypassAddConfirm) { bypassAddConfirm = false; return; }
+            // Nếu dùng HTML5 required, checkValidity sẽ hỗ trợ thêm
+            // (unobtrusive validation vẫn chạy bình thường)
+            e.preventDefault();
+            const gv = n => addForm.querySelector(`[name="${n}"]`)?.value || '';
+            const customerText = addForm.querySelector('select[name="AddDeal.CustomerID"] option:checked')?.textContent || '';
+            document.getElementById('confirmAddContent').innerHTML = `
+                <p><strong>Tên Deal:</strong> ${gv('AddDeal.DealName')}</p>
+                <p><strong>Khách hàng:</strong> ${customerText}</p>
+                <p><strong>Giá trị:</strong> ${(+gv('AddDeal.Value') || 0).toLocaleString()} đ</p>
+                <p><strong>Hạn chót:</strong> ${gv('AddDeal.Deadline') || '—'}</p>
+                <p><strong>Giai đoạn:</strong> ${gv('AddDeal.Stage') || 'Lead'}</p>
+                <p><strong>Ghi chú:</strong> ${gv('AddDeal.Notes') || 'Không có'}</p>`;
+            addConfirmModal.show();
+        });
+        document.getElementById('confirmAddBtn')?.addEventListener('click', () => {
+            addConfirmModal.hide();
+            bypassAddConfirm = true;
+            // requestSubmit vẫn chạy submit event, nhưng nhờ cờ nên không chặn nữa
+            addForm.requestSubmit();
+        });
+
+        // Chặn vòng lặp submit khi xác nhận sửa
+        const editForm = document.getElementById('editDealForm');
+        const editConfirmModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
+        let bypassEditConfirm = false;
+        editForm?.addEventListener('submit', (e) => {
+            if (bypassEditConfirm) { bypassEditConfirm = false; return; }
+            e.preventDefault();
+            const gv = n => editForm.querySelector(`[name="${n}"]`)?.value || '';
+            const customerText = editForm.querySelector('select[name="EditDeal.CustomerID"] option:checked')?.textContent || '';
+            document.getElementById('confirmEditContent').innerHTML = `
+                <p><strong>Tên Deal:</strong> ${gv('EditDeal.DealName')}</p>
+                <p><strong>Khách hàng:</strong> ${customerText}</p>
+                <p><strong>Giá trị:</strong> ${(+gv('EditDeal.Value') || 0).toLocaleString()} đ</p>
+                <p><strong>Hạn chót:</strong> ${gv('EditDeal.Deadline') || '—'}</p>
+                <p><strong>Giai đoạn:</strong> ${gv('EditDeal.Stage') || 'Lead'}</p>
+                <p><strong>Ghi chú:</strong> ${gv('EditDeal.Notes') || 'Không có'}</p>`;
+            editConfirmModal.show();
+        });
+        document.getElementById('confirmEditBtn')?.addEventListener('click', () => {
+            editConfirmModal.hide();
+            bypassEditConfirm = true;
+            editForm.requestSubmit();
+        });
+
+        // Stage change (giữ logic SweetAlert ở phần trước nếu bạn dùng)
+        async function updateDealStage(dealId, newStage) {
+            Swal.fire({ title: "Đang cập nhật...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            try {
+                const formData = new FormData();
+                formData.append("DealIdToUpdate", dealId);
+                formData.append("NewStage", newStage);
+                const tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+                const headers = {};
+                if (tokenEl) headers['RequestVerificationToken'] = tokenEl.value;
+                const res = await fetch(window.location.pathname + "?handler=UpdateStage", {
+                    method: "POST", body: formData, headers, credentials: "include"
+                });
+                Swal.close();
+                if (res.ok) {
+                    Swal.fire({ icon: "success", title: "Cập nhật thành công!", showConfirmButton: false, timer: 1200 })
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire({ icon: "error", title: "Cập nhật thất bại!", text: `Mã lỗi: ${res.status}` });
+                }
+            } catch {
+                Swal.close();
+                Swal.fire({ icon: "error", title: "Lỗi kết nối!", text: "Không thể cập nhật giai đoạn." });
+            }
+        }
+        window.confirmStageChange = async (dealId, newStage, currentStage) => {
+            if (currentStage === "Closed Won") {
+                Swal.fire({ icon: "warning", title: "Deal đã chốt!", text: "Không thể thay đổi trạng thái sau khi deal đã chốt." });
+                return;
+            }
             const result = await Swal.fire({
                 title: "Xác nhận thay đổi?",
-                html: `Bạn có chắc muốn đổi giai đoạn từ <b>${currentStage}</b> sang <b>${newStage}</b>?`,
+                html: `Đổi giai đoạn từ <b>${currentStage}</b> sang <b>${newStage}</b>?`,
                 icon: "question",
                 showCancelButton: true,
                 confirmButtonText: "Đổi ngay",
@@ -408,60 +665,7 @@
                 reverseButtons: true,
                 focusCancel: true
             });
-
-            if (result.isConfirmed) {
-                await updateDealStage(dealId, newStage);
-            }
-        }
-
-        // 🚀 Gửi yêu cầu cập nhật giai đoạn Deal
-        async function updateDealStage(dealId, newStage) {
-            Swal.fire({
-                title: "Đang cập nhật...",
-                text: "Vui lòng chờ trong giây lát",
-                didOpen: () => Swal.showLoading(),
-                allowOutsideClick: false
-            });
-
-            try {
-                const formData = new FormData();
-                formData.append("DealIdToUpdate", dealId);
-                formData.append("NewStage", newStage);
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-                const res = await fetch(window.location.pathname + "?handler=UpdateStage", {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                     'RequestVerificationToken': token // thêm dòng này
-                    },
-                    credentials: "include"
-                });
-
-                Swal.close();
-
-                if (res.ok) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Cập nhật thành công!",
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => location.reload());
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Cập nhật thất bại!",
-                        text: `Mã lỗi: ${res.status}`,
-                    });
-                }
-            } catch (err) {
-                console.error("Lỗi khi gửi yêu cầu cập nhật:", err);
-                Swal.fire({
-                    icon: "error",
-                    title: "Lỗi kết nối!",
-                    text: "Không thể gửi yêu cầu cập nhật giai đoạn Deal.",
-                });
-            }
-        }
+            if (result.isConfirmed) await updateDealStage(dealId, newStage);
+        };
     </script>
 }

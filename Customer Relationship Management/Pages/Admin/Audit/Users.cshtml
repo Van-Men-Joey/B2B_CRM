@@ -4,65 +4,66 @@
 @{
     ViewData["Title"] = "Audit Log - Users";
     Layout = "_LayoutAdmin";
+
+    var isManager = Model.Role == "Manager";
+    var isEmployee = Model.Role == "Employee";
 }
 
 <style>
+    /* Gradient heading giống Deal */
     .admin-gradient-heading {
-        background: linear-gradient(90deg, #2f3542 0%, #58606c 100%);
+        background: linear-gradient(90deg, #1f2937 0%, #4b5563 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: bold;
+        font-weight: 700;
         font-size: 1.8rem;
         letter-spacing: -0.5px;
     }
 
     .btn-admin-gradient {
-        background: linear-gradient(180deg, #2f3542 0%, #58606c 100%);
+        background: linear-gradient(90deg, #374151 0%, #4b5563 100%);
         color: #fff !important;
         border: none;
-        transition: .3s;
+        border-radius: 6px;
+        transition: all .25s;
     }
 
-    .btn-toggle {
-        min-width: 140px;
-    }
+        .btn-admin-gradient:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
 
     .glass-card-admin {
         backdrop-filter: blur(8px);
-        background: rgba(47,53,66,0.06);
+        background: rgba(47, 53, 66, 0.05);
         border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid #eee;
+        padding: 1.2rem;
+        border: 1px solid #e2e8f0;
     }
 
     .table-card-admin {
         background: #fff;
-        border-radius: .5rem;
+        border-radius: 0.5rem;
         box-shadow: 0 1px 8px rgba(44,62,80,0.04);
         border: none;
     }
 
     .admin-table-striped tbody tr:nth-child(odd) {
-        background-color: #f8fbf9 !important;
-    }
-
-    .table-sm td, .table-sm th {
-        padding: 0.4rem !important;
-        vertical-align: middle;
+        background-color: #fafafa !important;
     }
 
     .added {
-        background-color: #e9f9ee !important;
+        background-color: #e7f9ed !important;
         font-weight: 600;
     }
 
     .updated {
-        background-color: #fff8e6 !important;
+        background-color: #fff9e5 !important;
         font-weight: 600;
     }
 
     .deleted {
-        background-color: #fdecea !important;
+        background-color: #fdeaea !important;
         color: #b30000 !important;
         font-weight: 600;
     }
@@ -77,25 +78,34 @@
     }
 
     .small-muted {
-        color: #6c757d;
+        color: #6b7280;
         font-size: .9rem;
     }
 
-    .record-col {
-        width: 120px;
-        text-align: center;
+    .inner-change-table {
+        table-layout: fixed;
+        width: 100%;
     }
 
-    .role-header {
-        margin-bottom: .75rem;
+        .inner-change-table td {
+            vertical-align: middle !important;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+    .user-key {
+        text-transform: capitalize;
+        color: #374151;
+        font-weight: 600;
     }
 </style>
 
 @functions {
-    Dictionary<string, string> ParseJson(string? json)
+    Dictionary<string, string> ParseJson(string? json, bool forManager = false)
     {
         var dict = new Dictionary<string, string>();
         if (string.IsNullOrWhiteSpace(json)) return dict;
+
         try
         {
             if (json.Contains("\\u0022"))
@@ -104,13 +114,22 @@
             using var doc = JsonDocument.Parse(json);
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
-                dict[prop.Name] = prop.Value.ToString();
+                var key = prop.Name;
+                var val = prop.Value.ToString() ?? "";
+
+                if (forManager)
+                {
+                    if (new[] { "UserID", "Username", "Role", "Status", "IsDeleted" }.Contains(key))
+                        dict[key] = val;
+                }
+                else
+                {
+                    dict[key] = val;
+                }
             }
         }
-        catch
-        {
-            dict["RawData"] = json ?? "";
-        }
+        catch { dict["RawData"] = json ?? ""; }
+
         return dict;
     }
 
@@ -123,109 +142,103 @@
 }
 
 <div class="container-fluid px-3 py-4 animate__animated animate__fadeIn">
-    <!-- header -->
+    <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="admin-gradient-heading mb-0">Audit Log - Users</h2>
-            <p class="small-muted mb-0">Theo dõi thay đổi tài khoản người dùng — tạo / cập nhật / xóa</p>
+            <h2 class="admin-gradient-heading mb-0"><i class="bi bi-people me-2"></i>Audit Log - Users</h2>
+            <p class="small-muted mb-0">Lịch sử thay đổi tài khoản người dùng — tạo / cập nhật / xóa</p>
         </div>
-        <a href="/Admin/Audit" class="btn btn-admin-gradient btn-admin-outline">
+        <a href="/Admin/Audit" class="btn btn-admin-gradient">
             <i class="bi bi-arrow-left-circle me-1"></i> Quay lại
         </a>
     </div>
 
-    <div class="glass-card-admin mb-3">
-        <div class="table-responsive table-card-admin p-3">
-            @if (Model.Logs == null || !Model.Logs.Any())
-            {
-                <div class="alert alert-info m-3">
-                    <i class="bi bi-info-circle me-2"></i> Không có log nào được ghi lại cho bảng <b>Users</b>.
-                </div>
-            }
-            else
-            {
+    <!-- CONTENT -->
+    <div class="glass-card-admin">
+        @if (Model.Logs == null || !Model.Logs.Any())
+        {
+            <div class="alert alert-info text-center my-4">
+                <i class="bi bi-info-circle me-2"></i> Không có log nào được ghi lại cho bảng <b>Users</b>.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive table-card-admin p-3">
                 <table class="table admin-table-striped align-middle table-bordered mb-0">
-                    <thead class="table-light text-center">
+                    <thead class="table-light text-center align-middle">
                         <tr>
                             <th style="width:160px;">Thời gian</th>
-                            <th style="width:110px;">Mã QT</th>
-                            <th style="width:160px;">Người thao tác</th>
-                            <th style="width:100px;">Hành động</th>
-                            <th style="width:70px;">Record</th>
-                            <th style="min-width:360px;">Chi tiết thay đổi</th>
-                            <th style="width:150px;">IP</th>
+                            <th style="width:100px;">Mã NV</th>
+                            <th style="width:150px;">Người thao tác</th>
+                            <th style="width:110px;">Hành động</th>
+                            <th>Chi tiết thay đổi</th>
+                            <th style="width:150px;">Địa chỉ IP</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var log in Model.Logs)
                         {
-                            var oldData = ParseJson(log.OldValue);
-                            var newData = ParseJson(log.NewValue);
-                            var keys = new List<string>();
-                            keys.AddRange(oldData.Keys.Union(newData.Keys));
-                            keys = keys.OrderBy(k => k == "Status" ? 0 : k == "IsDeleted" ? 1 : 2).ThenBy(k => k).ToList();
+                            var oldData = ParseJson(log.OldValue, isManager);
+                            var newData = ParseJson(log.NewValue, isManager);
+                            var allKeys = oldData.Keys.Union(newData.Keys).Where(k =>
+                            !string.Equals(oldData.GetValueOrDefault(k) ?? "", newData.GetValueOrDefault(k) ?? "", StringComparison.Ordinal)
+                            ).ToList();
 
-                            var actionClass = log.Action switch
+                            var badgeClass = log.Action switch
                             {
-                                Models.ActionType.Create => "table-success",
-                                Models.ActionType.Update => "table-warning",
-                                Models.ActionType.Delete => "table-danger",
-                                _ => "table-secondary"
+                                Models.ActionType.Create => "success",
+                                Models.ActionType.Update => "warning text-dark",
+                                Models.ActionType.Delete => "danger",
+                                _ => "secondary"
                             };
 
-                            <tr class="@actionClass">
+                            <tr>
                                 <td>@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
-                                <td class="text-center fw-semibold">@(log.User?.UserCode ?? log.UserID?.ToString() ?? "—")</td>
-                                <td>@(log.User?.FullName ?? "Không rõ")</td>
-                                <td class="text-center">
-                                    <span class="badge bg-@(log.Action == Models.ActionType.Create ? "success"
-                                                                                                                                      : log.Action == Models.ActionType.Update ? "warning"
-                                                                                                                                      : log.Action == Models.ActionType.Delete ? "danger" : "secondary")">
-                                @log.Action
-                            </span>
-                        </td>
-                        <td class="text-center">@(!string.IsNullOrEmpty(log.RecordID) ? log.RecordID : (newData.ContainsKey("UserID") ? newData["UserID"] : (oldData.ContainsKey("UserID") ? oldData["UserID"] : "—")))</td>
-                        <td></td>
-                        <td class="text-center">@log.IPAddress</td>
-                    </tr>
-
-                            <!-- Details row: always present, nested table scrolls horizontally on small screens -->
-                            <tr class="details-row" data-logid="@log.LogID">
-                                <td class="details-cell" colspan="7">
-                                    <div class="nested-scroll">
-                                        <table class="nested-details w-100">
-                                            <thead>
+                                <td class="text-center fw-semibold">@log.User?.UserCode</td>
+                                <td>@(log.User?.Username ?? "Không rõ")</td>
+                                <td class="text-center"><span class="badge bg-@badgeClass">@log.Action</span></td>
+                                <td>
+                                    @if (!allKeys.Any())
+                                    {
+                                        <span class="text-muted fst-italic">Không có thay đổi cụ thể</span>
+                                    }
+                                    else
+                                    {
+                                        <table class="table table-sm table-bordered mb-0 inner-change-table small">
+                                            <thead class="table-light text-center">
                                                 <tr>
-                                                    <th style="width:35%;">Trường</th>
-                                                    <th style="width:32%;">Trước</th>
-                                                    <th style="width:33%;">Sau</th>
+                                                    <th style="width:30%;">Trường</th>
+                                                    <th style="width:35%;">Trước</th>
+                                                    <th style="width:35%;">Sau</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                        @foreach (var key in keys)
+                                                @foreach (var key in allKeys)
                                                 {
                                                     var oldVal = oldData.ContainsKey(key) ? oldData[key] : "";
                                                     var newVal = newData.ContainsKey(key) ? newData[key] : "";
+
                                                     string? rowClass = null;
                                                     if (string.IsNullOrEmpty(oldVal) && !string.IsNullOrEmpty(newVal)) rowClass = "added";
                                                     else if (!string.IsNullOrEmpty(oldVal) && string.IsNullOrEmpty(newVal)) rowClass = "deleted";
                                                     else if (oldVal != newVal) rowClass = "updated";
 
                                                     <tr class="@rowClass">
-                                                        <td class="fw-semibold">@key</td>
+                                                        <td class="user-key">@key</td>
                                                         <td class="text-muted">@Html.Raw(FormatVal(oldVal))</td>
                                                         <td class="text-dark fw-semibold">@Html.Raw(FormatVal(newVal))</td>
                                                     </tr>
                                                 }
                                             </tbody>
                                         </table>
-                                    </div>
+                                    }
                                 </td>
+                                <td class="text-center small">@log.IPAddress</td>
                             </tr>
                         }
                     </tbody>
                 </table>
-            }
-        </div>
+            </div>
+        }
     </div>
 </div>

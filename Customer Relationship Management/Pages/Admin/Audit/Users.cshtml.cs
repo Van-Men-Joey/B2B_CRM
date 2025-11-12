@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Customer_Relationship_Management.Models;
+﻿using Customer_Relationship_Management.Models;
 using Customer_Relationship_Management.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Customer_Relationship_Management.Pages.Admin.Audit
 {
@@ -24,8 +25,10 @@ namespace Customer_Relationship_Management.Pages.Admin.Audit
             _userRepo = userRepo;
         }
 
+        public string Role { get; set; } = "Employee"; // default
         public async Task OnGetAsync()
         {
+            Role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Employee";
             // Lấy log của bảng Users, giới hạn 100 bản ghi mới nhất
             var logs = (await _auditLogRepository.FindAsync(tableName: "Users"))
                         .OrderByDescending(l => l.CreatedAt)
