@@ -9,7 +9,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
     public class CustomerModel : PageModel
     {
         private readonly ICustomerService _customerService;
-        private const int PageSize = 10; // mỗi trang hiển thị 10 KH
+        private const int PageSize = 10;
 
         public CustomerModel(ICustomerService customerService)
         {
@@ -21,7 +21,11 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
         public int TotalPages { get; set; }
 
         [BindProperty]
-        public CustomerInputModel NewCustomer { get; set; } = new CustomerInputModel();
+        public CustomerInputModel NewCustomer { get; set; } = new();
+
+        [BindProperty]
+        public EditCustomerInputModel EditCustomer { get; set; } = new();
+
         [BindProperty(SupportsGet = true)]
         public FilterModel Filter { get; set; } = new();
 
@@ -34,6 +38,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
             public bool? VIP { get; set; }
             public string? DateFilter { get; set; } // today, week, month, year
         }
+
         public class CustomerInputModel
         {
             [Required(ErrorMessage = "Tên công ty không được để trống.")]
@@ -46,6 +51,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
 
             [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
             public string? ContactEmail { get; set; }
+
             [Required(ErrorMessage = "Vui lòng nhập SĐT.")]
             [RegularExpression(@"^\d{9,15}$", ErrorMessage = "Số điện thoại chỉ chứa 9–15 chữ số.")]
             public string? ContactPhone { get; set; }
@@ -56,7 +62,37 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
             public string? ContactTitle { get; set; }
             public string? Notes { get; set; }
         }
-        // ✅ GET – danh sách + bộ lọc + tìm kiếm + phân trang
+
+        public class EditCustomerInputModel
+        {
+            public int CustomerID { get; set; }
+            public string CustomerCode { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Tên công ty không được để trống.")]
+            [StringLength(100, ErrorMessage = "Tên công ty tối đa 100 ký tự.")]
+            public string CompanyName { get; set; } = string.Empty;
+
+            [Required(ErrorMessage = "Tên người liên hệ không được để trống.")]
+            [StringLength(100, ErrorMessage = "Tên người liên hệ tối đa 100 ký tự.")]
+            public string ContactName { get; set; } = string.Empty;
+
+            [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+            public string? ContactEmail { get; set; }
+
+            [Required(ErrorMessage = "Vui lòng nhập SĐT.")]
+            [RegularExpression(@"^\d{9,15}$", ErrorMessage = "Số điện thoại chỉ chứa 9–15 chữ số.")]
+            public string? ContactPhone { get; set; }
+
+            public string? Industry { get; set; }
+            public string? Scale { get; set; }
+            public string? Address { get; set; }
+            public string? ContactTitle { get; set; }
+            public string? Notes { get; set; }
+
+            public bool VIP { get; set; }
+        }
+
+        // GET – danh sách + bộ lọc + tìm kiếm + phân trang
         public async Task<IActionResult> OnGetAsync(int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
@@ -66,13 +102,13 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
             int userId = int.Parse(claim.Value);
             var allCustomers = await _customerService.GetCustomersForUserAsync(userId);
 
-            // --- Lọc dữ liệu ---
+            // Lọc
             if (!string.IsNullOrWhiteSpace(Filter.Keyword))
             {
                 string keyword = Filter.Keyword.ToLower();
                 allCustomers = allCustomers.Where(c =>
                     (c.CustomerCode ?? "").ToLower().Contains(keyword) ||
-                    ( c.CompanyName ?? "").ToLower().Contains(keyword) ||
+                    (c.CompanyName ?? "").ToLower().Contains(keyword) ||
                     (c.ContactName ?? "").ToLower().Contains(keyword) ||
                     (c.ContactEmail ?? "").ToLower().Contains(keyword) ||
                     (c.ContactPhone ?? "").ToLower().Contains(keyword));
@@ -90,7 +126,6 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
             if (Filter.VIP.HasValue)
                 allCustomers = allCustomers.Where(c => c.VIP == Filter.VIP.Value);
 
-            // --- Lọc theo ngày ---
             if (!string.IsNullOrEmpty(Filter.DateFilter))
             {
                 DateTime now = DateTime.Now;
@@ -104,21 +139,21 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
                 };
             }
 
-            // --- Phân trang ---
+            // Phân trang
             int totalCount = allCustomers.Count();
             TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize);
-            CurrentPage = pageNumber;
+            CurrentPage = Math.Max(1, Math.Min(pageNumber, TotalPages == 0 ? 1 : TotalPages));
 
             Customers = allCustomers
                 .OrderByDescending(c => c.CreatedAt)
-                .Skip((pageNumber - 1) * PageSize)
+                .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
                 .ToList();
 
             return Page();
         }
 
-        // GET – lấy chi tiết khách hàng (cho modal)
+        // GET – chi tiết (JSON) dùng cho modal xem + điền form sửa
         public async Task<JsonResult> OnGetCustomerDetailAsync(int id)
         {
             var claim = User.FindFirst("UserID");
@@ -127,12 +162,11 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
 
             int userId = int.Parse(claim.Value);
             var customer = await _customerService.GetCustomerByCustomerID_UserIDAsync(id, userId);
-            //chỉ UserID quản lí Customer đó mới xem được của người đó
             return new JsonResult(customer);
         }
 
-        // POST – thêm khách hàng (kèm kiểm tra hợp lệ)
-        public async Task<IActionResult> OnPostAddAsync()
+        // POST – thêm
+        public async Task<IActionResult> OnPostAddAsync(int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
             if (claim == null)
@@ -144,7 +178,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
             {
                 TempData["Error"] = string.Join("; ",
                     ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return await OnGetAsync();
+                return await OnGetAsync(pageNumber);
             }
 
             var customer = new Models.Customer
@@ -160,20 +194,75 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
                 Notes = NewCustomer.Notes
             };
 
-            // ✅ Gọi service mới có tuple trả về
             var result = await _customerService.AddCustomerAsync(customer, userId);
-
             if (result.Success)
                 TempData["Success"] = result.Message;
             else
                 TempData["Error"] = result.Message;
 
-            return RedirectToPage(new { pageNumber = CurrentPage });
+            return RedirectToPage(new { pageNumber });
         }
 
+        // POST – sửa
+        public async Task<IActionResult> OnPostEditAsync(int pageNumber = 1)
+        {
+            var claim = User.FindFirst("UserID");
+            if (claim == null)
+                return RedirectToPage("/Account/Login");
 
-        // POST – xóa khách hàng
-        public async Task<IActionResult> OnPostDeleteAsync(int id)
+            int userId = int.Parse(claim.Value);
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join("; ",
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return RedirectToPage(new { pageNumber });
+            }
+
+            var customer = await _customerService.GetCustomerByCustomerID_UserIDAsync(EditCustomer.CustomerID, userId);
+            if (customer == null)
+            {
+                TempData["Error"] = "Khách hàng không tồn tại hoặc bạn không có quyền chỉnh sửa.";
+                return RedirectToPage(new { pageNumber });
+            }
+
+            bool isChanged =
+                customer.CompanyName != EditCustomer.CompanyName ||
+                customer.ContactName != EditCustomer.ContactName ||
+                customer.ContactEmail != EditCustomer.ContactEmail ||
+                customer.ContactPhone != EditCustomer.ContactPhone ||
+                customer.Industry != EditCustomer.Industry ||
+                customer.Scale != EditCustomer.Scale ||
+                customer.Address != EditCustomer.Address ||
+                customer.ContactTitle != EditCustomer.ContactTitle ||
+                customer.Notes != EditCustomer.Notes;
+
+            if (!isChanged)
+            {
+                TempData["Info"] = "Không có thay đổi nào để cập nhật.";
+                return RedirectToPage(new { pageNumber });
+            }
+
+            customer.CompanyName = EditCustomer.CompanyName;
+            customer.ContactName = EditCustomer.ContactName;
+            customer.ContactEmail = EditCustomer.ContactEmail;
+            customer.ContactPhone = EditCustomer.ContactPhone;
+            customer.Industry = EditCustomer.Industry;
+            customer.Scale = EditCustomer.Scale;
+            customer.Address = EditCustomer.Address;
+            customer.ContactTitle = EditCustomer.ContactTitle;
+            customer.Notes = EditCustomer.Notes;
+
+            bool updated = await _customerService.UpdateCustomerAsync(customer, userId);
+            TempData[updated ? "Success" : "Error"] = updated
+                ? "Cập nhật thông tin khách hàng thành công!"
+                : "Không thể cập nhật khách hàng.";
+
+            return RedirectToPage(new { pageNumber });
+        }
+
+        // POST – xóa
+        public async Task<IActionResult> OnPostDeleteAsync(int id, int pageNumber = 1)
         {
             var claim = User.FindFirst("UserID");
             if (claim == null)
@@ -181,11 +270,12 @@ namespace Customer_Relationship_Management.Pages.Employee.Customer
 
             int userId = int.Parse(claim.Value);
             bool deleted = await _customerService.DeleteCustomerAsync(id, userId);
-            TempData["Message"] = deleted
+
+            TempData[deleted ? "Success" : "Error"] = deleted
                 ? "Xóa khách hàng thành công!"
                 : "Không thể xóa khách hàng này.";
 
-            return RedirectToPage(new { pageNumber = CurrentPage });
+            return RedirectToPage(new { pageNumber });
         }
     }
 }

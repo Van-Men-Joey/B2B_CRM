@@ -1,5 +1,4 @@
 ﻿@page
-@using Customer_Relationship_Management.Pages.Employee.Customer
 @model Customer_Relationship_Management.Pages.Employee.Customer.CustomerModel
 @{
     Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
@@ -7,10 +6,31 @@
     ViewData["ActiveMenu"] = "Customer";
 }
 
-<!-- Giao diện chính -->
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["Info"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-    <!-- Header -->
+    <!-- 1) Heading danh sách khách hàng -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-gradient mb-0">Danh sách khách hàng của bạn</h2>
@@ -21,152 +41,14 @@
         </a>
     </div>
 
-    <!-- Bộ lọc -->
-    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
-        <div class="card-body row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">Từ khóa</label>
-                <input type="text" name="keyword" value="@Model.Filter.Keyword" class="form-control shadow-sm" placeholder="Mã KH, Tên công ty, liên hệ, email..." />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">Ngành nghề</label>
-                <input type="text" name="industry" value="@Model.Filter.Industry" class="form-control shadow-sm" />
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">Quy mô</label>
-                <input type="text" name="scale" value="@Model.Filter.Scale" class="form-control shadow-sm" />
-            </div>
-            <div class="col-md-1">
-                <label class="form-label fw-semibold">Địa chỉ</label>
-                <input type="text" name="address" value="@Model.Filter.Address" class="form-control shadow-sm" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">VIP</label>
-                <select name="vip" class="form-select shadow-sm">
-                    <option value="">Tất cả</option>
-                    <option value="true" selected="@(Model.Filter.VIP == true)">⭐ VIP</option>
-                    <option value="false" selected="@(Model.Filter.VIP == false)">Không</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label fw-semibold">Khoảng thời gian</label>
-                <select name="dateFilter" class="form-select shadow-sm">
-                    <option value="">Tất cả</option>
-                    <option value="today" selected="@(Model.Filter.DateFilter == "today")">Hôm nay</option>
-                    <option value="week" selected="@(Model.Filter.DateFilter == "week")">Tuần này</option>
-                    <option value="month" selected="@(Model.Filter.DateFilter == "month")">Tháng này</option>
-                    <option value="year" selected="@(Model.Filter.DateFilter == "year")">Năm nay</option>
-                </select>
-            </div>
-
-            <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-gradient px-4">
-                    Lọc
-                </button>
-                <a asp-page="/Employee/Customer/Customer" class="btn btn-gradient px-4 ms-2">
-                    Đặt lại
-                </a>
-            </div>
-        </div>
-    </form>
-
-    <!-- Danh sách Khách hàng -->
-    <div class="card border-0 shadow-lg glass-card">
-        <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
-            <h5 class="mb-0 fw-semibold">Danh sách khách hàng</h5>
-            <span class="small opacity-75">Giữ thông tin khách hàng đầy đủ để chốt deal hiệu quả hơn</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr class="text-center fw-semibold">
-                        <th>VIP</th>
-                        <th>Mã KH</th>
-                        <th>Tên công ty</th>
-                        <th>Liên hệ</th>
-                        <th>Email</th>
-                        <th>Điện thoại</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Customers.Any())
-                    {
-                        foreach (var c in Model.Customers)
-                        {
-                            <tr class="text-center">
-                                <td>@(c.VIP ? "⭐" : "")</td>
-                                <td>@c.CustomerCode</td>
-                                <td class="text-start fw-semibold">@c.CompanyName</td>
-                                <td>@c.ContactName</td>
-                                <td>@c.ContactEmail</td>
-                                <td>@c.ContactPhone</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary view-detail"
-                                            data-id="@c.CustomerID"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#customerModal"
-                                            title="Xem chi tiết">
-                                        Xem
-                                    </button>
-                                    <a asp-page="/Employee/Customer/EditCustomer" asp-route-id="@c.CustomerID"
-                                       class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">
-                                        Sửa
-                                    </a>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@c.CustomerID"
-                                          onsubmit="return confirm('Xóa khách hàng này?');" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
-                                            Xóa
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                Chưa có khách hàng nào.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        @if (Model.TotalPages > 1)
-        {
-            <div class="card-footer bg-transparent py-3">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center mb-0">
-                        <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
-                            <a class="page-link shadow-sm" asp-route-pageNumber="@(Model.CurrentPage - 1)">← Trước</a>
-                        </li>
-                        @for (int i = 1; i <= Model.TotalPages; i++)
-                        {
-                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                <a class="page-link shadow-sm" asp-route-pageNumber="@i">@i</a>
-                            </li>
-                        }
-                        <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
-                            <a class="page-link shadow-sm" asp-route-pageNumber="@(Model.CurrentPage + 1)">Sau →</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        }
-    </div>
-
-    <!-- Form thêm khách hàng -->
-    <div id="addCustomerSection" class="card glass-card border-0 shadow-sm mt-4">
+    <!-- 2) Thêm khách hàng mới -->
+    <div id="addCustomerSection" class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
             <h5 class="mb-0">Thêm khách hàng mới</h5>
         </div>
         <div class="card-body">
-            <form method="post" asp-page-handler="Add">
+            <form id="addCustomerForm" method="post" asp-page-handler="Add">
+                <input type="hidden" name="pageNumber" value="@Model.CurrentPage" />
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                 <div class="row g-4">
                     <div class="col-md-6">
@@ -212,17 +94,180 @@
                     </div>
                 </div>
                 <div class="text-end mt-2">
-                    <button type="submit" class="btn btn-gradient px-4 py-2 shadow-sm">
+                    <button type="submit" class="btn btn-gradient px-4 py-2 shadow-sm" id="btnAddCustomer">
                         Thêm khách hàng
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- 3) Bộ lọc tìm kiếm -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Từ khóa</label>
+                <input type="text" name="Keyword" value="@Model.Filter.Keyword" class="form-control shadow-sm" placeholder="Mã KH, Tên công ty, liên hệ, email..." />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Ngành nghề</label>
+                <input type="text" name="Industry" value="@Model.Filter.Industry" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">Quy mô</label>
+                <input type="text" name="Scale" value="@Model.Filter.Scale" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-semibold">Địa chỉ</label>
+                <input type="text" name="Address" value="@Model.Filter.Address" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">VIP</label>
+                <select name="VIP" class="form-select shadow-sm">
+                    <option value="" selected="@(Model.Filter.VIP == null)">Tất cả</option>
+                    <option value="true" selected="@(Model.Filter.VIP == true)">⭐ VIP</option>
+                    <option value="false" selected="@(Model.Filter.VIP == false)">Không</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Khoảng thời gian</label>
+                <select name="DateFilter" class="form-select shadow-sm">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.Filter.DateFilter))">Tất cả</option>
+                    <option value="today" selected="@(Model.Filter.DateFilter == "today")">Hôm nay</option>
+                    <option value="week" selected="@(Model.Filter.DateFilter == "week")">Tuần này</option>
+                    <option value="month" selected="@(Model.Filter.DateFilter == "month")">Tháng này</option>
+                    <option value="year" selected="@(Model.Filter.DateFilter == "year")">Năm nay</option>
+                </select>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-gradient px-4">
+                    Lọc
+                </button>
+                <a asp-page="/Employee/Customer/Customer" class="btn btn-gradient px-4 ms-2">
+                    Đặt lại
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- 4) Danh sách khách hàng -->
+    <div class="card border-0 shadow-lg glass-card">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-semibold">Danh sách khách hàng</h5>
+            <span class="small opacity-75">Giữ thông tin khách hàng đầy đủ để chốt deal hiệu quả hơn</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="text-center fw-semibold">
+                        <th>VIP</th>
+                        <th>Mã KH</th>
+                        <th>Tên công ty</th>
+                        <th>Liên hệ</th>
+                        <th>Email</th>
+                        <th>Điện thoại</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Customers.Any())
+                    {
+                        foreach (var c in Model.Customers)
+                        {
+                            <tr class="text-center">
+                                <td>@(c.VIP ? "⭐" : "")</td>
+                                <td>@c.CustomerCode</td>
+                                <td class="text-start fw-semibold">@c.CompanyName</td>
+                                <td>@c.ContactName</td>
+                                <td>@c.ContactEmail</td>
+                                <td>@c.ContactPhone</td>
+                                <td class="text-nowrap">
+                                    <button class="btn btn-sm btn-outline-primary me-1 btn-view"
+                                            data-id="@c.CustomerID"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#customerDetailModal">
+                                        Xem
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline-warning me-1 btn-edit"
+                                            data-id="@c.CustomerID"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editCustomerModal">
+                                        Sửa
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline-danger btn-delete"
+                                            data-id="@c.CustomerID"
+                                            data-name="@c.CompanyName"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteConfirmModal">
+                                        Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Chưa có khách hàng nào.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer bg-transparent py-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link shadow-sm"
+                               asp-route-pageNumber="@(Model.CurrentPage - 1)"
+                               asp-route-Keyword="@Model.Filter.Keyword"
+                               asp-route-Industry="@Model.Filter.Industry"
+                               asp-route-Scale="@Model.Filter.Scale"
+                               asp-route-Address="@Model.Filter.Address"
+                               asp-route-VIP="@Model.Filter.VIP"
+                               asp-route-DateFilter="@Model.Filter.DateFilter">← Trước</a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link shadow-sm"
+                                   asp-route-pageNumber="@i"
+                                   asp-route-Keyword="@Model.Filter.Keyword"
+                                   asp-route-Industry="@Model.Filter.Industry"
+                                   asp-route-Scale="@Model.Filter.Scale"
+                                   asp-route-Address="@Model.Filter.Address"
+                                   asp-route-VIP="@Model.Filter.VIP"
+                                   asp-route-DateFilter="@Model.Filter.DateFilter">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link shadow-sm"
+                               asp-route-pageNumber="@(Model.CurrentPage + 1)"
+                               asp-route-Keyword="@Model.Filter.Keyword"
+                               asp-route-Industry="@Model.Filter.Industry"
+                               asp-route-Scale="@Model.Filter.Scale"
+                               asp-route-Address="@Model.Filter.Address"
+                               asp-route-VIP="@Model.Filter.VIP"
+                               asp-route-DateFilter="@Model.Filter.DateFilter">Sau →</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
 </div>
 
-<!-- Modal chi tiết khách hàng -->
-<div class="modal fade" id="customerModal" tabindex="-1" aria-hidden="true">
+<!-- Modal: Xem chi tiết -->
+<div class="modal fade" id="customerDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
             <div class="modal-header bg-gradient-blue text-white">
@@ -230,7 +275,146 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="customerDetailContent" class="p-2 text-center text-muted">Đang tải...</div>
+                <div id="customerDetailContent" class="p-2 text-start text-muted">Đang tải...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Sửa khách hàng -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title fw-bold">Chỉnh sửa thông tin khách hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCustomerForm" method="post" asp-page-handler="Edit">
+                    <input type="hidden" asp-for="EditCustomer.CustomerID" />
+                    <input type="hidden" name="pageNumber" value="@Model.CurrentPage" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.CustomerCode" class="form-control" placeholder="Mã Khách Hàng" disabled />
+                                <label asp-for="EditCustomer.CustomerCode"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.CompanyName" class="form-control" placeholder="Tên công ty" />
+                                <label asp-for="EditCustomer.CompanyName"></label>
+                                <span asp-validation-for="EditCustomer.CompanyName" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.ContactName" class="form-control" placeholder="Liên hệ" />
+                                <label asp-for="EditCustomer.ContactName"></label>
+                                <span asp-validation-for="EditCustomer.ContactName" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.ContactEmail" class="form-control" placeholder="Email" />
+                                <label asp-for="EditCustomer.ContactEmail"></label>
+                                <span asp-validation-for="EditCustomer.ContactEmail" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.ContactPhone" class="form-control" placeholder="Điện thoại" />
+                                <label asp-for="EditCustomer.ContactPhone"></label>
+                                <span asp-validation-for="EditCustomer.ContactPhone" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.Industry" class="form-control" placeholder="Ngành nghề" />
+                                <label asp-for="EditCustomer.Industry"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.Scale" class="form-control" placeholder="Quy mô" />
+                                <label asp-for="EditCustomer.Scale"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.Address" class="form-control" placeholder="Địa chỉ" />
+                                <label asp-for="EditCustomer.Address"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <textarea asp-for="EditCustomer.Notes" class="form-control" placeholder="Ghi chú"></textarea>
+                                <label asp-for="EditCustomer.Notes"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="EditCustomer.ContactTitle" class="form-control" placeholder="Chức vụ" />
+                                <label asp-for="EditCustomer.ContactTitle"></label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input class="form-control" value="@(Model.EditCustomer.VIP ? "⭐ VIP" : "Không")" disabled />
+                                <label>VIP</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn btn-warning px-4 py-2 shadow-sm" id="btnEditSubmit">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Thêm -->
+<div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận thêm khách hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmAddContent" class="text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gradient" id="confirmAddBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Sửa -->
+<div class="modal fade" id="confirmEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận cập nhật khách hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmEditContent" class="text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gradient" id="confirmEditBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Xóa -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận xóa khách hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa khách hàng: <strong id="deleteCustomerName"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="post" asp-page-handler="Delete" class="d-none">
+                    <input type="hidden" name="id" id="deleteCustomerId" />
+                    <input type="hidden" name="pageNumber" value="@Model.CurrentPage" />
+                </form>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
             </div>
         </div>
     </div>
@@ -238,7 +422,6 @@
 
 @section Styles {
     <style>
-        /* Đồng bộ phong cách với trang Deal */
         .btn-gradient {
             background: linear-gradient(45deg, #007bff, #00d4ff);
             color: #fff;
@@ -287,19 +470,23 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        document.querySelectorAll('.view-detail').forEach(btn => {
+        const qs = (s, r = document) => r.querySelector(s);
+        const qsa = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+        // Load chi tiết khách hàng
+        qsa('.btn-view').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.getAttribute('data-id');
-                const res = await fetch(`/api/employee/customer/detail/${id}`);
+                const res = await fetch(`?handler=CustomerDetail&id=${id}`);
                 const data = await res.json();
-                const container = document.getElementById('customerDetailContent');
+                const container = qs('#customerDetailContent');
 
                 if (data) {
                     container.innerHTML = `
                         <div class="row g-3 text-start">
                             <div class="col-md-6">
                                 <p><strong>Mã KH:</strong> ${data.customerCode || 'N/A'}</p>
-                                <p><strong>Tên công ty:</strong> ${data.companyName}</p>
+                                <p><strong>Tên công ty:</strong> ${data.companyName || ''}</p>
                                 <p><strong>Người liên hệ:</strong> ${data.contactName || ''}</p>
                             </div>
                             <div class="col-md-6">
@@ -318,6 +505,102 @@
                 }
             });
         });
+
+        // Mở modal edit và đổ dữ liệu
+        qsa('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                const res = await fetch(`?handler=CustomerDetail&id=${id}`);
+                const data = await res.json();
+
+                if (!data) {
+                    alert('Không thể tải dữ liệu khách hàng để chỉnh sửa.');
+                    return;
+                }
+
+                // Fill form edit
+                qs('#editCustomerForm input[name="EditCustomer.CustomerID"]').value = data.customerID;
+                qs('#editCustomerForm input[asp-for="EditCustomer.CustomerCode"]')?.setAttribute('value', data.customerCode || '');
+                // Các input còn lại
+                qs('#editCustomerForm input[name="EditCustomer.CompanyName"]').value = data.companyName || '';
+                qs('#editCustomerForm input[name="EditCustomer.ContactName"]').value = data.contactName || '';
+                qs('#editCustomerForm input[name="EditCustomer.ContactEmail"]').value = data.contactEmail || '';
+                qs('#editCustomerForm input[name="EditCustomer.ContactPhone"]').value = data.contactPhone || '';
+                qs('#editCustomerForm input[name="EditCustomer.Industry"]').value = data.industry || '';
+                qs('#editCustomerForm input[name="EditCustomer.Scale"]').value = data.scale || '';
+                qs('#editCustomerForm input[name="EditCustomer.Address"]').value = data.address || '';
+                qs('#editCustomerForm input[name="EditCustomer.ContactTitle"]').value = data.contactTitle || '';
+                qs('#editCustomerForm textarea[name="EditCustomer.Notes"]').value = data.notes || '';
+            });
+        });
+
+        // Xác nhận xóa
+        qsa('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                qs('#deleteCustomerId').value = id;
+                qs('#deleteCustomerName').textContent = name || '';
+            });
+        });
+        qs('#confirmDeleteBtn')?.addEventListener('click', () => {
+            qs('#deleteForm').submit();
+        });
+
+        // Xác nhận thêm
+        const addForm = qs('#addCustomerForm');
+        const addModalEl = qs('#confirmAddModal');
+        const addModal = addModalEl ? new bootstrap.Modal(addModalEl) : null;
+
+        addForm?.addEventListener('submit', (e) => {
+            // Nếu có lỗi validation client-side, để mặc định
+            if (!addForm.checkValidity()) return;
+            e.preventDefault();
+
+            const getVal = name => addForm.querySelector(`[name="${name}"]`)?.value || '';
+            const content = `
+                <p><strong>Tên công ty:</strong> ${getVal('NewCustomer.CompanyName')}</p>
+                <p><strong>Người liên hệ:</strong> ${getVal('NewCustomer.ContactName')}</p>
+                <p><strong>Email:</strong> ${getVal('NewCustomer.ContactEmail') || 'Chưa có'}</p>
+                <p><strong>SĐT:</strong> ${getVal('NewCustomer.ContactPhone') || 'Chưa có'}</p>
+                <p><strong>Ngành nghề:</strong> ${getVal('NewCustomer.Industry') || 'N/A'}</p>
+                <p><strong>Địa chỉ:</strong> ${getVal('NewCustomer.Address') || 'Không có'}</p>
+                <p><strong>Ghi chú:</strong> ${getVal('NewCustomer.Notes') || 'Không có'}</p>
+            `;
+            qs('#confirmAddContent').innerHTML = content;
+            addModal?.show();
+        });
+        qs('#confirmAddBtn')?.addEventListener('click', () => {
+            addModal?.hide();
+            addForm.submit();
+        });
+
+        // Xác nhận sửa
+        const editForm = qs('#editCustomerForm');
+        const editModalEl = qs('#confirmEditModal');
+        const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+
+        editForm?.addEventListener('submit', (e) => {
+            if (!editForm.checkValidity()) return;
+            e.preventDefault();
+
+            const getVal = name => editForm.querySelector(`[name="${name}"]`)?.value || '';
+            const content = `
+                <p><strong>Mã KH:</strong> ${qs('#editCustomerForm input[asp-for="EditCustomer.CustomerCode"]')?.getAttribute('value') || 'N/A'}</p>
+                <p><strong>Tên công ty:</strong> ${getVal('EditCustomer.CompanyName')}</p>
+                <p><strong>Người liên hệ:</strong> ${getVal('EditCustomer.ContactName')}</p>
+                <p><strong>Email:</strong> ${getVal('EditCustomer.ContactEmail') || 'Chưa có'}</p>
+                <p><strong>SĐT:</strong> ${getVal('EditCustomer.ContactPhone') || 'Chưa có'}</p>
+                <p><strong>Ngành nghề:</strong> ${getVal('EditCustomer.Industry') || 'N/A'}</p>
+                <p><strong>Địa chỉ:</strong> ${getVal('EditCustomer.Address') || 'Không có'}</p>
+                <p><strong>Ghi chú:</strong> ${getVal('EditCustomer.Notes') || 'Không có'}</p>
+            `;
+            qs('#confirmEditContent').innerHTML = content;
+            editModal?.show();
+        });
+        qs('#confirmEditBtn')?.addEventListener('click', () => {
+            editModal?.hide();
+            editForm.submit();
+        });
     </script>
 }
-
