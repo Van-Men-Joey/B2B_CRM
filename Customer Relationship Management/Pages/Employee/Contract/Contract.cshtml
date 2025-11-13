@@ -1,4 +1,614 @@
 ﻿@page
 @model Customer_Relationship_Management.Pages.Employee.Contract.ContractModel
 @{
+    Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
+    ViewData["Title"] = "Contracts";
+    ViewData["ActiveMenu"] = "Quotation & Contract";
+}
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- 1) Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient mb-0">Danh sách Hợp đồng của bạn</h2>
+            <p class="text-muted mb-0 small">Quản lý hợp đồng đã gửi duyệt, sửa/xóa (khi Pending) và xử lý thanh toán</p>
+        </div>
+    </div>
+
+    <!-- 2) Thêm hợp đồng mới -->
+    <div class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
+            <h5 class="mb-0">Thêm Hợp đồng mới</h5>
+        </div>
+        <div class="card-body">
+            <form id="addContractForm" method="post" asp-page-handler="Add" enctype="multipart/form-data" class="row g-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Chọn Deal</label>
+                    <select class="form-select" asp-for="AddContract.DealID">
+                        <option value="0">-- Chọn Deal --</option>
+                        @foreach (var d in Model.Deals)
+                        {
+                            <option value="@d.DealID">@d.DealName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="AddContract.DealID" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold">Nội dung hợp đồng</label>
+                    <textarea class="form-control" rows="3" asp-for="AddContract.ContractContent" placeholder="Nhập nội dung tóm tắt/điều khoản..."></textarea>
+                    <span asp-validation-for="AddContract.ContractContent" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tệp hợp đồng (PDF)</label>
+                    <input class="form-control" type="file" asp-for="UploadFileAdd" accept=".pdf" />
+                </div>
+
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-gradient px-4" id="btnAddContract">Gửi duyệt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Xác nhận Thêm -->
+    <div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg glass-card">
+                <div class="modal-header bg-gradient-blue text-white">
+                    <h5 class="modal-title">Xác nhận thêm Hợp đồng</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="confirmAddContent" class="text-start"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-gradient" id="confirmAddBtn">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3) Bộ lọc -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Trạng thái duyệt</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">-- Tất cả --</option>
+                    <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                    <option value="Approved" selected="@(Model.StatusFilter == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(Model.StatusFilter == "Rejected")">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Từ ngày</label>
+                <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Đến ngày</label>
+                <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Tìm kiếm</label>
+                <input type="text" name="Keyword" value="@Model.Keyword" placeholder="Tên deal hoặc nội dung hợp đồng..." class="form-control shadow-sm" />
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-gradient px-4">Lọc</button>
+                <a href="@Url.Page("/Employee/Contract/Contract")" class="btn btn-gradient px-4 ms-2">Đặt lại</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- 4) Danh sách hợp đồng -->
+    <div class="card border-0 shadow-lg glass-card">
+        <div class="card-header bg-gradient-blue text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">Danh sách hợp đồng</h5>
+            <span class="small opacity-75">Theo dõi tiến độ duyệt và thanh toán</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th>#</th>
+                        <th>Tên Deal</th>
+                        <th>Nội dung tóm tắt</th>
+                        <th>Duyệt</th>
+                        <th>Thanh toán</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Contracts == null || !Model.Contracts.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Chưa có hợp đồng nào.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var c in Model.Contracts)
+                        {
+                            var approvalBadge = c.ApprovalStatus switch
+                            {
+                                "Approved" => "badge bg-success",
+                                "Rejected" => "badge bg-danger",
+                                _ => "badge bg-warning text-dark"
+                            };
+                            var paymentBadge = c.PaymentStatus switch
+                            {
+                                "Paid" => "badge bg-success",
+                                "Overdue" => "badge bg-danger",
+                                _ => "badge bg-secondary"
+                            };
+
+                            <tr class="text-center"
+                                data-ctrid="@c.ContractID"
+                                data-dealname="@c.Deal?.DealName"
+                                data-amount="@((c.Deal?.Value ?? 0).ToString("0"))"
+                                data-approval="@c.ApprovalStatus"
+                                data-payment="@c.PaymentStatus">
+                                <td class="text-muted">#@c.ContractID</td>
+                                <td class="text-start fw-semibold">@c.Deal?.DealName</td>
+                                <td class="text-start text-muted">
+                                    @if (!string.IsNullOrEmpty(c.ContractContent))
+                                    {
+                                        @((c.ContractContent.Length > 70 ? c.ContractContent.Substring(0, 70) + "..." : c.ContractContent))
+                                    }
+                                </td>
+                                <td><span class="@approvalBadge">@c.ApprovalStatus</span></td>
+                                <td>
+                                    <span class="@paymentBadge">@c.PaymentStatus</span>
+                                    @if (c.ApprovalStatus == "Approved" && c.PaymentStatus != "Paid")
+                                    {
+                                        <div class="mt-1 d-flex gap-1 justify-content-center">
+                                            <button class="btn btn-sm btn-outline-primary btn-pay-qr"
+                                                    data-contract-id="@c.ContractID"
+                                                    data-qr-amount="@(c.Deal?.Value ?? 0)"
+                                                    data-qr-info="@($"Thanh toan hop dong #{c.ContractID}")">
+                                                QR
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-dark btn-pay-cash"
+                                                    data-contract-id="@c.ContractID">
+                                                Tiền mặt
+                                            </button>
+                                        </div>
+                                    }
+                                </td>
+                                <td>@c.CreatedAt.ToShortDateString()</td>
+                                <td class="text-nowrap">
+                                    <button class="btn btn-sm btn-outline-primary me-1 btn-view"
+                                            data-detail-url="@Url.Page("./Contract", null, new { handler = "ContractDetail", id = c.ContractID }, null)">
+                                        Xem
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning me-1 btn-edit"
+                                            data-detail-url="@Url.Page("./Contract", null, new { handler = "ContractDetail", id = c.ContractID }, null)"
+                                            @(c.ApprovalStatus == "Pending" ? null : "disabled")>
+                                        Sửa
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-delete"
+                                            data-id="@c.ContractID"
+                                            data-name="@c.Deal?.DealName"
+                                            @(c.ApprovalStatus == "Pending" ? null : "disabled")>
+                                        Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xem chi tiết -->
+<div class="modal fade" id="contractDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title fw-bold">Chi tiết Hợp đồng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="contractDetailContent" class="p-2 text-start text-muted">Đang tải...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Sửa Hợp đồng -->
+<div class="modal fade" id="editContractModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title fw-bold">Chỉnh sửa Hợp đồng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editContractForm" method="post" asp-page-handler="Edit" enctype="multipart/form-data" class="row g-3">
+                    <input type="hidden" asp-for="EditContract.ContractID" />
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Chọn Deal</label>
+                        <select class="form-select" asp-for="EditContract.DealID">
+                            @foreach (var d in Model.Deals)
+                            {
+                                <option value="@d.DealID">@d.DealName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="EditContract.DealID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Nội dung hợp đồng</label>
+                        <textarea class="form-control" rows="3" asp-for="EditContract.ContractContent"></textarea>
+                        <span asp-validation-for="EditContract.ContractContent" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Thay tệp (PDF)</label>
+                        <input type="file" class="form-control" asp-for="UploadFileEdit" accept=".pdf" />
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-warning px-4" id="btnEditContract">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Sửa -->
+<div class="modal fade" id="confirmEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận cập nhật Hợp đồng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmEditContent" class="text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-gradient" id="confirmEditBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận Xóa -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận xóa Hợp đồng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa Hợp đồng: <strong id="deleteContractName"></strong>?</p>
+                <p class="small text-muted">Lưu ý: chỉ xóa khi trạng thái duyệt là Pending.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="post" asp-page-handler="Delete" class="d-none">
+                    <input type="hidden" name="id" id="deleteContractId" />
+                </form>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Thanh toán QR -->
+<div class="modal fade" id="qrPayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content qr-white-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">QR thanh toán hợp đồng <span id="qrCtrLabel"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="qrImg" class="img-fluid" alt="QR thanh toán" />
+                <p class="mt-2 text-muted small" id="qrInfoText"></p>
+                <div class="d-flex gap-2 justify-content-center mt-2">
+                    <a class="btn btn-sm btn-outline-secondary" id="btnDownloadQR" download>Download QR</a>
+                    <button type="button" class="btn btn-sm btn-outline-dark" id="btnPrintInvoice">In hóa đơn</button>
+                    <form id="markPaidQRForm" method="post" asp-page-handler="MarkPaid" class="d-none">
+                        <input type="hidden" name="ContractIdToPay" id="qrContractId" />
+                        <input type="hidden" name="PaymentMethod" value="qr" />
+                    </form>
+                    <button type="button" class="btn btn-sm btn-success" id="btnConfirmPaid">Đánh dấu đã thanh toán</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Thanh toán tiền mặt (Admin xác nhận) -->
+<div class="modal fade" id="cashPayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg glass-card">
+            <div class="modal-header bg-gradient-blue text-white">
+                <h5 class="modal-title">Xác nhận thanh toán tiền mặt</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="markPaidCashForm" method="post" asp-page-handler="MarkPaid" class="row g-3">
+                    <input type="hidden" name="ContractIdToPay" id="cashContractId" />
+                    <input type="hidden" name="PaymentMethod" value="cash" />
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Admin UserCode</label>
+                        <input class="form-control" name="AdminUserCode" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Mật khẩu Admin</label>
+                        <input type="password" class="form-control" name="AdminPassword" required />
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-success">Xác nhận thanh toán</button>
+                    </div>
+                </form>
+                <div class="small text-muted">Chỉ Admin có quyền xác nhận thanh toán tiền mặt.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .btn-gradient {
+            background: linear-gradient(45deg,#007bff,#00d4ff);
+            color: #fff;
+            border: none;
+            transition: .3s
+        }
+
+            .btn-gradient:hover {
+                transform: scale(1.05);
+                opacity: .9
+            }
+
+        .text-gradient {
+            background: linear-gradient(90deg,#007bff,#00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,.9);
+            border-radius: 14px;
+            color: #212529
+        }
+
+        .bg-gradient-blue {
+            background: linear-gradient(45deg,#007bff,#00b4ff)
+        }
+
+        .qr-white-modal {
+            background: #fff !important;
+            color: #212529 !important;
+            border: 1px solid rgba(0,0,0,.125)
+        }
+
+            .qr-white-modal .modal-header, .qr-white-modal .modal-body, .qr-white-modal .modal-footer {
+                background: #fff !important
+            }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const $ = (s, r=document)=>r.querySelector(s);
+        const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+        // ---------- Add: confirm modal ----------
+        const addForm = $('#addContractForm');
+        const confirmAddModal = new bootstrap.Modal(document.getElementById('confirmAddModal'));
+        let bypassAdd = false;
+        addForm?.addEventListener('submit', (e) => {
+            if (bypassAdd) { bypassAdd = false; return; }
+            e.preventDefault();
+            const gv = n => addForm.querySelector(`[name="${n}"]`)?.value || '';
+            const dealText = addForm.querySelector('select[name="AddContract.DealID"] option:checked')?.textContent || '';
+            $('#confirmAddContent').innerHTML = `
+                <p><strong>Deal:</strong> ${dealText}</p>
+                <p><strong>Nội dung:</strong> ${gv('AddContract.ContractContent')}</p>`;
+            confirmAddModal.show();
+        });
+        $('#confirmAddBtn')?.addEventListener('click', () => {
+            confirmAddModal.hide();
+            bypassAdd = true;
+            addForm.requestSubmit();
+        });
+
+        // ---------- View / Edit / Delete buttons ----------
+        document.addEventListener('click', async (e) => {
+            const viewBtn = e.target.closest('.btn-view');
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+            const payQRBtn = e.target.closest('.btn-pay-qr');
+            const payCashBtn = e.target.closest('.btn-pay-cash');
+
+            if (viewBtn) {
+                const url = viewBtn.getAttribute('data-detail-url');
+                $('#contractDetailContent').innerHTML = 'Đang tải...';
+                new bootstrap.Modal(document.getElementById('contractDetailModal')).show();
+                try {
+                    const res = await fetch(url, { credentials: 'include' });
+                    const data = await res.json();
+                    if (!data) {
+                        $('#contractDetailContent').innerHTML = '<div class="text-danger">Không thể tải dữ liệu hợp đồng.</div>';
+                        return;
+                    }
+                    const fileHtml = data.filePath ? `<a href="${data.filePath}" target="_blank">Tải tệp</a>` : '—';
+                    $('#contractDetailContent').innerHTML = `
+                        <div class="row g-3 text-start">
+                            <div class="col-md-6">
+                                <p><strong>ContractID:</strong> #${data.contractID}</p>
+                                <p><strong>Deal:</strong> ${data.dealName || ''}</p>
+                                <p><strong>Duyệt:</strong> ${data.approvalStatus}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Thanh toán:</strong> ${data.paymentStatus}</p>
+                                <p><strong>Thanh toán lúc:</strong> ${data.paymentAt ? new Date(data.paymentAt).toLocaleString() : '—'}</p>
+                                <p><strong>Tệp:</strong> ${fileHtml}</p>
+                            </div>
+                            <div class="col-12">
+                                <p><strong>Nội dung:</strong></p>
+                                <div class="border rounded p-2 bg-light" style="white-space:pre-wrap">${data.contractContent || ''}</div>
+                            </div>
+                        </div>`;
+                } catch {
+                    $('#contractDetailContent').innerHTML = '<div class="text-danger">Lỗi khi tải dữ liệu hợp đồng.</div>';
+                }
+                return;
+            }
+
+            if (editBtn) {
+                const url = editBtn.getAttribute('data-detail-url');
+                try {
+                    const res = await fetch(url, { credentials: 'include' });
+                    const data = await res.json();
+                    if (!data) { alert('Không thể tải dữ liệu hợp đồng để chỉnh sửa.'); return; }
+                    // Fill form
+                    $('#editContractForm input[name="EditContract.ContractID"]').value = data.contractID;
+                    $('#editContractForm select[name="EditContract.DealID"]').value = data.dealID || '';
+                    $('#editContractForm textarea[name="EditContract.ContractContent"]').value = data.contractContent || '';
+                    new bootstrap.Modal(document.getElementById('editContractModal')).show();
+                } catch {
+                    alert('Lỗi khi tải dữ liệu hợp đồng để chỉnh sửa.');
+                }
+                return;
+            }
+
+            if (deleteBtn) {
+                const id = deleteBtn.getAttribute('data-id');
+                const name = deleteBtn.getAttribute('data-name');
+                $('#deleteContractId').value = id;
+                $('#deleteContractName').textContent = name || '';
+                new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+                return;
+            }
+
+            if (payQRBtn) {
+                const ctrId = +payQRBtn.getAttribute('data-contract-id');
+                const amount = +payQRBtn.getAttribute('data-qr-amount') || 0;
+                const info = payQRBtn.getAttribute('data-qr-info') || '';
+                openQRModal(ctrId, amount, info);
+                return;
+            }
+
+            if (payCashBtn) {
+                const ctrId = +payCashBtn.getAttribute('data-contract-id');
+                $('#cashContractId').value = ctrId;
+                new bootstrap.Modal(document.getElementById('cashPayModal')).show();
+                return;
+            }
+        });
+
+        $('#confirmDeleteBtn')?.addEventListener('click', () => $('#deleteForm').submit());
+
+        // ---------- Confirm edit ----------
+        const editForm = document.getElementById('editContractForm');
+        const confirmEditModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
+        let bypassEdit = false;
+        editForm?.addEventListener('submit', (e) => {
+            if (bypassEdit) { bypassEdit = false; return; }
+            e.preventDefault();
+            const gv = n => editForm.querySelector(`[name="${n}"]`)?.value || '';
+            const dealText = editForm.querySelector('select[name="EditContract.DealID"] option:checked')?.textContent || '';
+            $('#confirmEditContent').innerHTML = `
+                <p><strong>ContractID:</strong> #${gv('EditContract.ContractID')}</p>
+                <p><strong>Deal:</strong> ${dealText}</p>
+                <p><strong>Nội dung:</strong> ${gv('EditContract.ContractContent')}</p>`;
+            confirmEditModal.show();
+        });
+        $('#confirmEditBtn')?.addEventListener('click', () => {
+            confirmEditModal.hide();
+            bypassEdit = true;
+            editForm.requestSubmit();
+        });
+
+        // ---------- QR Payment Modal ----------
+        const bankCode = "@Model.BankCode";
+        const bankAcc = "@Model.BankAccount";
+        const bankName = "@Model.BankAccountName";
+        function buildQR(amount, info) {
+            const url = `https://img.vietqr.io/image/${bankCode}-${bankAcc}-compact.png?amount=${Math.round(amount)}&addInfo=${encodeURIComponent(info)}&accountName=${encodeURIComponent(bankName)}`;
+            return url;
+        }
+        function openQRModal(contractId, amount, info) {
+            $('#qrCtrLabel').textContent = `#${contractId}`;
+            const imgUrl = buildQR(amount, info);
+            const imgEl = $('#qrImg');
+            imgEl.src = imgUrl;
+            $('#qrInfoText').textContent = `Quét bằng ứng dụng ngân hàng/MoMo/ZaloPay hỗ trợ VietQR để thanh toán: ${amount.toLocaleString()} đ`;
+            const a = $('#btnDownloadQR');
+            a.href = imgUrl;
+            a.download = `QR_Contract_${contractId}.png`;
+            $('#qrContractId').value = contractId;
+            new bootstrap.Modal(document.getElementById('qrPayModal')).show();
+        }
+        // Mark paid after QR
+        $('#btnConfirmPaid')?.addEventListener('click', async () => {
+            const form = $('#markPaidQRForm');
+            Swal.fire({ title: "Xác nhận đã nhận tiền?", icon: "question", showCancelButton: true, confirmButtonText: "Xác nhận", cancelButtonText: "Hủy" })
+                .then(r => { if (r.isConfirmed) form.submit(); });
+        });
+
+        // Print invoice from QR modal
+        $('#btnPrintInvoice')?.addEventListener('click', () => {
+            const ctrText = $('#qrCtrLabel')?.textContent || '';
+            const ctrId = (ctrText || '#0').replace('#','');
+            const row = document.querySelector(`tr[data-ctrid="${ctrId}"]`);
+            const dealName = row?.getAttribute('data-dealname') || '';
+            const amount = +(row?.getAttribute('data-amount') || '0');
+            const img = $('#qrImg');
+            const html = '<' + 'html>' +
+                '<head><title>Hóa đơn thanh toán</title></head>' +
+                '<' + 'body style="font-family: Arial; background:#fff; color:#212529;">' +
+                `<h2 style="text-align:center;margin:0 0 6px">HÓA ĐƠN THANH TOÁN</h2>` +
+                `<div style="margin:8px 0"><b>Hợp đồng:</b> #${ctrId}</div>` +
+                `<div style="margin:8px 0"><b>Deal:</b> ${dealName}</div>` +
+                `<div style="margin:8px 0"><b>Số tiền:</b> ${amount.toLocaleString()} đ</div>` +
+                `<div style="margin:8px 0"><b>Tài khoản nhận:</b> ${bankName} (${bankCode.toUpperCase()} - ${bankAcc})</div>` +
+                `<div style="text-align:center;margin-top:14px"><img src="${img?.src || ''}" style="max-width:300px" /></div>` +
+                `<p style="text-align:center;color:#6c757d">Vui lòng quét QR để thanh toán</p>` +
+                '<script>window.onload=function(){window.print();}<' + '/script>' +
+                '</' + 'body></' + 'html>';
+            const w = window.open('', '_blank');
+            w.document.write(html);
+            w.document.close();
+        });
+    </script>
 }
