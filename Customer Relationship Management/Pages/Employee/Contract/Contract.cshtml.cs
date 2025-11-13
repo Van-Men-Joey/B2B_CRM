@@ -102,10 +102,10 @@ namespace Customer_Relationship_Management.Pages.Employee.Contract
             // Hợp đồng của nhân viên
             var allContracts = (await _contractService.GetByUserAsync(currentUserId)).ToList();
 
-            // Áp dụng bộ lọc
+            // Áp dụng bộ lọc (không phân biệt hoa/thường)
             var query = allContracts.AsQueryable();
             if (!string.IsNullOrWhiteSpace(StatusFilter))
-                query = query.Where(c => c.ApprovalStatus == StatusFilter);
+                query = query.Where(c => string.Equals(c.ApprovalStatus, StatusFilter, StringComparison.OrdinalIgnoreCase));
             if (FromDate.HasValue)
                 query = query.Where(c => c.CreatedAt.Date >= FromDate.Value.Date);
             if (ToDate.HasValue)
@@ -139,7 +139,6 @@ namespace Customer_Relationship_Management.Pages.Employee.Contract
             // Load Deal (nếu chưa include)
             if (c.Deal == null)
             {
-                // best-effort: try get via deal repo for name
                 try
                 {
                     var deal = (await _dealRepo.GetByIdAsync(c.DealID));

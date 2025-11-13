@@ -4,6 +4,7 @@ using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Customer_Relationship_Management.Security; // thêm để dùng enum
 
 namespace Customer_Relationship_Management.Pages.Manager.Contract
 {
@@ -35,7 +36,6 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
 
         public async Task<IActionResult> OnPostApproveAsync(int id)
         {
-            // Try to get user id from claim
             var userIdClaim = User.FindFirst("UserID")?.Value;
             int? approverId = null;
             if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsed)) approverId = parsed;
@@ -54,7 +54,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
 
             try
             {
-                await _contractService.ApproveAsync(id, "Approved", approverId);
+                await _contractService.ApproveAsync(id, ContractApprovalStatus.Approved.ToString(), approverId);
                 TempData["SuccessMessage"] = $"✅ Hợp đồng #{id} đã được phê duyệt.";
             }
             catch (Exception ex)
@@ -85,7 +85,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
 
             try
             {
-                await _contractService.ApproveAsync(id, "Rejected", approverId);
+                await _contractService.ApproveAsync(id, ContractApprovalStatus.Rejected.ToString(), approverId);
                 TempData["ErrorMessage"] = $"❌ Hợp đồng #{id} đã bị từ chối.";
             }
             catch (Exception ex)
