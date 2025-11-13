@@ -1,4 +1,4 @@
-﻿@page "{status?}"
+﻿@page "{status?}/{id?}"
 @model Customer_Relationship_Management.Pages.Manager.Contract.IndexModel
 @{
     ViewData["Title"] = "Quản lý hợp đồng";
@@ -7,7 +7,6 @@
 }
 
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý Hợp đồng</h2>
@@ -15,7 +14,6 @@
         </div>
     </div>
 
-    <!-- Bộ lọc tìm kiếm (giữ tab trạng thái hiện tại) -->
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
         <input type="hidden" name="status" value="@Model.CurrentStatus" />
         <div class="card-body row g-3 align-items-end">
@@ -38,12 +36,20 @@
         </div>
     </form>
 
-    <!-- Tabs filter -->
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Pending" ? "active" : "")" asp-page="./Index" asp-route-status="Pending">Pending</a></li>
         <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Approved" ? "active" : "")" asp-page="./Index" asp-route-status="Approved">Approved</a></li>
         <li class="nav-item"><a class="nav-link @(Model.CurrentStatus == "Rejected" ? "active" : "")" asp-page="./Index" asp-route-status="Rejected">Rejected</a></li>
     </ul>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
 
     @if (Model.Contracts.Any())
     {
@@ -69,17 +75,19 @@
                             <td>@contract.ApprovalStatus</td>
                             <td>@contract.CreatedAt.ToString("dd/MM/yyyy")</td>
                             <td>
-                                <!-- Xem chi tiết: POST để nạp dữ liệu, JS sẽ mở modal sau khi render -->
-                                <form method="post" asp-page-handler="LoadDetails" style="display:inline">
-                                    <input type="hidden" name="id" value="@contract.ContractID" />
-                                    <input type="hidden" name="status" value="@Model.CurrentStatus" />
-                                    <button type="submit" class="btn btn-sm btn-outline-info">Xem</button>
-                                </form>
+                                <a class="btn btn-sm btn-outline-info"
+                                   asp-page="./Index"
+                                   asp-route-status="@Model.CurrentStatus"
+                                   asp-route-id="@contract.ContractID">
+                                    Xem
+                                </a>
 
                                 @if (Model.CurrentStatus == "Pending")
                                 {
-                                    <form method="post" asp-page-handler="Approve" asp-route-id="@contract.ContractID" style="display:inline">
-                                        <!-- type=button + data-confirm -->
+                                    <form method="post" asp-page-handler="Approve" style="display:inline">
+                                        <input type="hidden" name="id" value="@contract.ContractID" />
+                                        <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                        <input type="hidden" name="selectedId" value="@contract.ContractID" />
                                         <button type="button"
                                                 class="btn btn-sm btn-success js-confirm"
                                                 data-title="Phê duyệt hợp đồng?"
@@ -89,7 +97,10 @@
                                             Duyệt
                                         </button>
                                     </form>
-                                    <form method="post" asp-page-handler="Reject" asp-route-id="@contract.ContractID" style="display:inline">
+                                    <form method="post" asp-page-handler="Reject" style="display:inline">
+                                        <input type="hidden" name="id" value="@contract.ContractID" />
+                                        <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                        <input type="hidden" name="selectedId" value="@contract.ContractID" />
                                         <button type="button"
                                                 class="btn btn-sm btn-danger js-confirm"
                                                 data-title="Từ chối hợp đồng?"
@@ -113,13 +124,13 @@
     }
 </div>
 
-<!-- Details Modal -->
+<!-- Modal Chi tiết -->
 <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="detailsModalLabel">Chi tiết hợp đồng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 @if (Model.SelectedContract != null)
@@ -149,11 +160,42 @@
                                 <a href="@c.FilePath" target="_blank" class="btn btn-outline-secondary">Tải file</a>
                             </div>
                         }
+                        @if (string.Equals(c.ApprovalStatus, "Pending", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="col-12 mt-3">
+                                <form method="post" asp-page-handler="Approve" class="d-inline">
+                                    <input type="hidden" name="id" value="@c.ContractID" />
+                                    <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                    <input type="hidden" name="selectedId" value="@c.ContractID" />
+                                    <button type="button"
+                                            class="btn btn-success js-confirm"
+                                            data-title="Phê duyệt hợp đồng?"
+                                            data-text="Bạn chắc chắn muốn phê duyệt hợp đồng #@c.ContractID?"
+                                            data-icon="question"
+                                            data-confirm="#198754">
+                                        Duyệt
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Reject" class="d-inline ms-2">
+                                    <input type="hidden" name="id" value="@c.ContractID" />
+                                    <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                    <input type="hidden" name="selectedId" value="@c.ContractID" />
+                                    <button type="button"
+                                            class="btn btn-danger js-confirm"
+                                            data-title="Từ chối hợp đồng?"
+                                            data-text="Bạn chắc chắn muốn từ chối hợp đồng #@c.ContractID?"
+                                            data-icon="warning"
+                                            data-confirm="#dc3545">
+                                        Từ chối
+                                    </button>
+                                </form>
+                            </div>
+                        }
                     </div>
                 }
                 else
                 {
-                    <div class="text-muted">Chọn "Xem" để tải chi tiết hợp đồng.</div>
+                    <div class="text-muted">Chọn "Xem" trong bảng để mở chi tiết.</div>
                 }
             </div>
         </div>
@@ -162,57 +204,39 @@
 
 @section Styles {
     <style>
-        /* match light green gradient used in top bar/sidebar */
         .btn-gradient-mgr {
-            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
             color: #fff;
             border: none;
-            transition: .3s;
+            transition: .3s
         }
 
             .btn-gradient-mgr:hover {
                 transform: translateY(-1px);
-                opacity: .95;
+                opacity: .95
             }
 
         .text-gradient-mgr {
-            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: transparent
         }
 
         .glass-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255,255,255,.92);
             border-radius: 14px;
-            color: #212529;
+            color: #212529
         }
 
         .table-card {
             background: #fff;
-            border-radius: .75rem;
-        }
-
-        table.table {
-            background-color: #fff;
-            color: #212529;
-        }
-
-            table.table thead th {
-                color: #212529;
-            }
-
-        .table-hover tbody tr:hover {
-            background-color: #f8f9fa;
+            border-radius: .75rem
         }
 
         .modal-content {
             background: #fff;
-            color: #212529;
-        }
-
-        .modal-title, .modal-body, .modal-body p, .modal-body strong {
-            color: #212529;
+            color: #212529
         }
     </style>
 }
@@ -220,44 +244,29 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Modal detail auto-open (giữ nguyên)
         document.addEventListener('DOMContentLoaded', function() {
-            const modalEl = document.getElementById('detailsModal');
-            if (modalEl && modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('padding-right');
-
             const hasDetails = '@(Model.SelectedContract != null ? "true" : "false")' === 'true';
-            if (hasDetails) bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true, focus: true }).show();
+            if (hasDetails) {
+                const modalEl = document.getElementById('detailsModal');
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
         });
 
-        // Xác nhận Duyệt/Từ chối
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('.js-confirm');
             if (!btn) return;
-
             e.preventDefault();
             const form = btn.closest('form');
-            const title = btn.dataset.title || 'Xác nhận?';
-            const text = btn.dataset.text || 'Bạn chắc chắn?';
-            const icon = btn.dataset.icon || 'question';
-            const confirmColor = btn.dataset.confirm || '#198754';
-
             Swal.fire({
-                title: title,
-                text: text,
-                icon: icon,
+                title: btn.dataset.title || 'Xác nhận?',
+                text: btn.dataset.text || 'Bạn chắc chắn?',
+                icon: btn.dataset.icon || 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Xác nhận',
                 cancelButtonText: 'Hủy',
-                confirmButtonColor: confirmColor,
+                confirmButtonColor: btn.dataset.confirm || '#198754',
                 cancelButtonColor: '#6c757d'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
+            }).then(r => { if (r.isConfirmed) form.submit(); });
         });
     </script>
 }

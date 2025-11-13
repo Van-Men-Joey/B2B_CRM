@@ -4,7 +4,7 @@ using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Customer_Relationship_Management.Security; // thêm để dùng enum
+using Customer_Relationship_Management.Security;
 
 namespace Customer_Relationship_Management.Pages.Manager.Contract
 {
@@ -24,32 +24,28 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
         public string CurrentStatus { get; set; } = "Pending";
         public Models.Contract? SelectedContract { get; set; }
 
-        // --- Filters (GET-binding) ---
+        // Filters
         [BindProperty(SupportsGet = true)] public DateTime? FromDate { get; set; }
         [BindProperty(SupportsGet = true)] public DateTime? ToDate { get; set; }
         [BindProperty(SupportsGet = true)] public string? Keyword { get; set; }
 
-        public async Task OnGetAsync(string? status)
+        // GET: /Manager/Contract/{status?}/{id?}
+        public async Task OnGetAsync(string? status, int? id)
         {
             await LoadDataAsync(status);
+            if (id.HasValue && id.Value > 0)
+            {
+                SelectedContract = await _contractService.GetByIdAsync(id.Value);
+            }
         }
 
-        public async Task<IActionResult> OnPostApproveAsync(int id)
+        public async Task<IActionResult> OnPostApproveAsync(int id, string? status, int? selectedId)
         {
-            var userIdClaim = User.FindFirst("UserID")?.Value;
-            int? approverId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsed)) approverId = parsed;
-            else
-            {
-                var userCode = User.FindFirst("UserCode")?.Value;
-                var manager = await _userRepo.GetByUserCodeAsync(userCode ?? string.Empty);
-                approverId = manager?.UserID;
-            }
-
+            var approverId = await ResolveApproverIdAsync();
             if (approverId == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy thông tin người duyệt.";
-                return RedirectToPage();
+                return RedirectToPage(new { status = status ?? "Pending", id = selectedId });
             }
 
             try
@@ -62,25 +58,16 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
                 TempData["ErrorMessage"] = $"Lỗi khi phê duyệt: {ex.Message}";
             }
 
-            return RedirectToPage(new { status = "Pending" });
+            return RedirectToPage(new { status = status ?? "Pending", id = id }); // giữ modal mở, show cập nhật
         }
 
-        public async Task<IActionResult> OnPostRejectAsync(int id)
+        public async Task<IActionResult> OnPostRejectAsync(int id, string? status, int? selectedId)
         {
-            var userIdClaim = User.FindFirst("UserID")?.Value;
-            int? approverId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsed)) approverId = parsed;
-            else
-            {
-                var userCode = User.FindFirst("UserCode")?.Value;
-                var manager = await _userRepo.GetByUserCodeAsync(userCode ?? string.Empty);
-                approverId = manager?.UserID;
-            }
-
+            var approverId = await ResolveApproverIdAsync();
             if (approverId == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy thông tin người duyệt.";
-                return RedirectToPage();
+                return RedirectToPage(new { status = status ?? "Pending", id = selectedId });
             }
 
             try
@@ -93,31 +80,25 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
                 TempData["ErrorMessage"] = $"Lỗi khi từ chối: {ex.Message}";
             }
 
-            return RedirectToPage(new { status = "Pending" });
+            return RedirectToPage(new { status = status ?? "Pending", id = id });
         }
 
-        public async Task<IActionResult> OnPostLoadDetailsAsync(int id, string? status)
+        private async Task<int?> ResolveApproverIdAsync()
         {
-            // Load list and selected contract, stay on same page, then JS will open modal
-            await LoadDataAsync(status);
-            SelectedContract = await _contractService.GetByIdAsync(id);
-            return Page();
+            var userIdClaim = User.FindFirst("UserID")?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsed)) return parsed;
+
+            var userCode = User.FindFirst("UserCode")?.Value;
+            var manager = await _userRepo.GetByUserCodeAsync(userCode ?? string.Empty);
+            return manager?.UserID;
         }
 
         private async Task LoadDataAsync(string? status)
         {
-            var userCode = User.FindFirst("UserCode")?.Value;
-            var manager = await _userRepo.GetByUserCodeAsync(userCode ?? string.Empty);
-            if (manager == null)
-            {
-                TempData["ErrorMessage"] = "Không tìm thấy Manager hiện tại.";
-                return;
-            }
-
             CurrentStatus = string.IsNullOrEmpty(status) ? "Pending" : status;
+
             var list = (await _contractService.GetByStatusAsync(CurrentStatus)).ToList();
 
-            // Apply filters in-memory (source already includes relations)
             if (FromDate.HasValue)
                 list = list.Where(x => x.CreatedAt.Date >= FromDate.Value.Date).ToList();
             if (ToDate.HasValue)
