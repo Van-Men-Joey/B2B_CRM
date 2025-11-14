@@ -14,13 +14,19 @@ namespace Customer_Relationship_Management.Services.Implements
     {
         private readonly ITaskRepository _taskRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly IUserRepository _userRepository; // NEW: dùng để xác định team của Manager
 
-        public TaskService(ITaskRepository taskRepository, IAuditLogService auditLogService)
+        public TaskService(
+            ITaskRepository taskRepository,
+            IAuditLogService auditLogService,
+            IUserRepository userRepository) // NEW
         {
             _taskRepository = taskRepository;
             _auditLogService = auditLogService;
+            _userRepository = userRepository; // NEW
         }
 
+        // ========= Employee scope =========
         public async Task<IEnumerable<ModelTask>> GetMyTasksAsync(int employeeId)
             => await _taskRepository.GetByEmployeeAsync(employeeId);
 
@@ -35,13 +41,11 @@ namespace Customer_Relationship_Management.Services.Implements
             if (task.DueDate.HasValue && task.DueDate.Value < DateTime.UtcNow.AddMinutes(-1))
                 return (false, "Ngày giờ thực hiện không được ở quá khứ.");
 
-            if (!string.IsNullOrEmpty(task.Status) &&
-                !new[] { "Pending", "In-Progress", "Done" }.Contains(task.Status, StringComparer.OrdinalIgnoreCase))
-                return (false, "Trạng thái không hợp lệ.");
+            // ÉP trạng thái Pending cho nhân viên khi tạo (yêu cầu của bạn)
+            task.Status = "Pending";
 
             task.AssignedToUserID = employeeId;
             task.CreatedByUserID = employeeId;
-            task.Status = string.IsNullOrWhiteSpace(task.Status) ? "Pending" : task.Status;
             task.CreatedAt = DateTime.UtcNow;
             task.UpdatedAt = DateTime.UtcNow;
             task.IsDeleted = false;
@@ -71,16 +75,11 @@ namespace Customer_Relationship_Management.Services.Implements
             if (task.DueDate.HasValue && task.DueDate.Value < DateTime.UtcNow.AddMinutes(-1))
                 return (false, "Ngày giờ thực hiện không được ở quá khứ.");
 
-            if (!string.IsNullOrEmpty(task.Status) &&
-                !new[] { "Pending", "In-Progress", "Done" }.Contains(task.Status, StringComparer.OrdinalIgnoreCase))
-                return (false, "Trạng thái không hợp lệ.");
-
+            // Nhân viên không được đổi trạng thái
             current.Title = task.Title.Trim();
             current.Description = string.IsNullOrWhiteSpace(task.Description) ? null : task.Description.Trim();
             current.DueDate = task.DueDate;
             current.ReminderAt = task.ReminderAt;
-            if (!string.IsNullOrWhiteSpace(task.Status))
-                current.Status = task.Status;
             current.UpdatedAt = DateTime.UtcNow;
 
             await _taskRepository.UpdateAsync(current);
@@ -126,6 +125,88 @@ namespace Customer_Relationship_Management.Services.Implements
 
             await _auditLogService.LogAsync(employeeId, ActionType.Update, "Tasks", task.TaskID.ToString(), $"Update status: {status}");
             return (true, "Cập nhật trạng thái thành công.");
+        }
+
+        // ========= Manager scope (KHÔNG thay đổi repository) =========
+
+        private async Task<HashSet<int>> GetTeamUserIdsAsync(int managerUserId)
+        {
+            var emps = await _userRepository.GetEmployeesByManagerAsync(managerUserId);
+            return emps.Select(e => e.UserID).ToHashSet();
+        }
+
+        public async Task<IEnumerable<ModelTask>> GetTeamTasksAsync(int managerUserId)
+        {
+            var teamIds = await GetTeamUserIdsAsync(managerUserId);
+            var result = new List<ModelTask>();
+            // Không thay đổi repository: gom task theo từng nhân viên
+            foreach (var empId in teamIds)
+            {
+                var list = await _taskRepository.GetByEmployeeAsync(empId);
+                result.AddRange(list);
+            }
+            return result;
+        }
+
+        public async Task<ModelTask?> GetByIdForManagerAsync(int taskId, int managerUserId)
+        {
+            var task = await _taskRepository.GetByIdAsync(taskId);
+            if (task == null || task.IsDeleted) return null;
+
+            var assigned = await _userRepository.GetByIdAsync(task.AssignedToUserID);
+            if (assigned == null || assigned.ManagerID != managerUserId) return null;
+
+            return task;
+        }
+
+        public async Task<(bool Success, string Message)> ManagerUpdateAsync(ModelTask task, int managerUserId)
+        {
+            var current = await _taskRepository.GetByIdAsync(task.TaskID);
+            if (current == null || current.IsDeleted) return (false, "Task không tồn tại.");
+
+            var assigned = await _userRepository.GetByIdAsync(current.AssignedToUserID);
+            if (assigned == null || assigned.ManagerID != managerUserId)
+                return (false, "Task không thuộc team của bạn.");
+
+            if (string.IsNullOrWhiteSpace(task.Title) || task.Title.Length > 200)
+                return (false, "Tiêu đề không hợp lệ.");
+            if (task.DueDate.HasValue && task.DueDate.Value < DateTime.UtcNow.AddMinutes(-1))
+                return (false, "Hạn không được ở quá khứ.");
+            if (!string.IsNullOrWhiteSpace(task.Status) &&
+                !new[] { "Pending", "In-Progress", "Done" }.Contains(task.Status, StringComparer.OrdinalIgnoreCase))
+                return (false, "Trạng thái không hợp lệ.");
+
+            current.Title = task.Title.Trim();
+            current.Description = string.IsNullOrWhiteSpace(task.Description) ? null : task.Description.Trim();
+            current.DueDate = task.DueDate;
+            current.ReminderAt = task.ReminderAt;
+            if (!string.IsNullOrWhiteSpace(task.Status)) current.Status = task.Status;
+            current.UpdatedAt = DateTime.UtcNow;
+
+            await _taskRepository.UpdateAsync(current);
+            await _taskRepository.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(managerUserId, ActionType.Update, "Tasks", current.TaskID.ToString(), "Manager update task");
+            return (true, "Cập nhật Task thành công.");
+        }
+
+        public async Task<(bool Success, string Message)> ManagerSoftDeleteAsync(int taskId, int managerUserId)
+        {
+            var current = await _taskRepository.GetByIdAsync(taskId);
+            if (current == null || current.IsDeleted) return (false, "Task không tồn tại.");
+
+            var assigned = await _userRepository.GetByIdAsync(current.AssignedToUserID);
+            if (assigned == null || assigned.ManagerID != managerUserId)
+                return (false, "Task không thuộc team của bạn.");
+
+            current.IsDeleted = true;
+            current.UpdatedAt = DateTime.UtcNow;
+
+            await _taskRepository.UpdateAsync(current);
+            await _taskRepository.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(managerUserId, ActionType.Delete, "Tasks", taskId.ToString(), "Manager soft delete task");
+            return (true, "Xóa Task thành công.");
         }
     }
 }

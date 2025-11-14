@@ -1,10 +1,13 @@
-﻿using Customer_Relationship_Management.Models;
+﻿using System.Linq;
+using Customer_Relationship_Management.Models;
 using Customer_Relationship_Management.Repositories.Interfaces;
+using Customer_Relationship_Management.Security;
 using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Customer_Relationship_Management.Security;
+// Alias namespace để dùng STT.Task và STT.Task<TResult>
+using STT = System.Threading.Tasks;
 
 namespace Customer_Relationship_Management.Pages.Manager.Contract
 {
@@ -30,7 +33,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
         [BindProperty(SupportsGet = true)] public string? Keyword { get; set; }
 
         // GET: /Manager/Contract/{status?}/{id?}
-        public async Task OnGetAsync(string? status, int? id)
+        public async STT.Task OnGetAsync(string? status, int? id)
         {
             await LoadDataAsync(status);
             if (id.HasValue && id.Value > 0)
@@ -39,7 +42,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
             }
         }
 
-        public async Task<IActionResult> OnPostApproveAsync(int id, string? status, int? selectedId)
+        public async STT.Task<IActionResult> OnPostApproveAsync(int id, string? status, int? selectedId)
         {
             var approverId = await ResolveApproverIdAsync();
             if (approverId == null)
@@ -61,7 +64,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
             return RedirectToPage(new { status = status ?? "Pending", id = id }); // giữ modal mở, show cập nhật
         }
 
-        public async Task<IActionResult> OnPostRejectAsync(int id, string? status, int? selectedId)
+        public async STT.Task<IActionResult> OnPostRejectAsync(int id, string? status, int? selectedId)
         {
             var approverId = await ResolveApproverIdAsync();
             if (approverId == null)
@@ -83,7 +86,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
             return RedirectToPage(new { status = status ?? "Pending", id = id });
         }
 
-        private async Task<int?> ResolveApproverIdAsync()
+        private async STT.Task<int?> ResolveApproverIdAsync()
         {
             var userIdClaim = User.FindFirst("UserID")?.Value;
             if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var parsed)) return parsed;
@@ -93,7 +96,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
             return manager?.UserID;
         }
 
-        private async Task LoadDataAsync(string? status)
+        private async STT.Task LoadDataAsync(string? status)
         {
             CurrentStatus = string.IsNullOrEmpty(status) ? "Pending" : status;
 

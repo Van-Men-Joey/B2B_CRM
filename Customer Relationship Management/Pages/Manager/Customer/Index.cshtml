@@ -14,19 +14,18 @@
         </div>
     </div>
 
-    <!-- Bộ lọc tìm kiếm -->
+    <!-- Bộ lọc tìm kiếm: 1 hàng gồm thanh tìm kiếm + nút Tìm kiếm (không có Đặt lại) -->
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
-        <div class="card-body row g-3 align-items-end">
-            <div class="col-md-9">
+        <div class="card-body row g-2 align-items-end">
+            <div class="col-lg-10">
                 <label class="form-label fw-semibold">Tìm kiếm</label>
                 <input name="SearchTerm"
                        value="@Model.SearchTerm"
                        placeholder="Tên công ty, email, số điện thoại..."
                        class="form-control shadow-sm" />
             </div>
-            <div class="col-md-3 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-gradient-mgr px-4">Tìm</button>
-                <a asp-page="./Index" class="btn btn-gradient-mgr px-4">Đặt lại</a>
+            <div class="col-lg-2 d-flex align-items-end justify-content-end">
+                <button type="submit" class="btn btn-gradient-mgr btn-filter-mgr w-100">Tìm kiếm</button>
             </div>
         </div>
     </form>
@@ -69,6 +68,11 @@
 
     <!-- Table -->
     <div class="table-responsive card table-card p-3">
+        <!-- Dải tiêu đề bảng (band) – gradient xanh lá, đồng bộ phong cách Task/Deal -->
+        <div class="table-title-band table-title-band-mgr mb-2">
+            <div class="fw-semibold">Danh sách khách hàng</div>
+        </div>
+
         <table class="table table-hover align-middle text-dark bg-white">
             <thead class="table-light">
                 <tr>
@@ -78,70 +82,57 @@
                     <th class="text-center">Deal</th>
                     <th class="text-end">Giá trị</th>
                     <th class="text-center">Sales</th>
-                    <th class="text-center">Hành động</th>
+                    <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
-            @if (Model.Customers?.Any() == true)
-            {
-                foreach (var c in Model.Customers)
+                @if (Model.Customers?.Any() == true)
                 {
-                    <tr>
-                        <td class="fw-semibold">@c.CompanyName</td>
-                        <td>@c.Industry</td>
-                        <td class="text-center">
-                            <button type="button"
-                                    class="btn btn-sm @(c.VIP ? "btn-warning text-dark" : "btn-outline-secondary")"
-                                    onclick="openVipModal(@c.CustomerID, @c.VIP.ToString().ToLower())">
-                                @(c.VIP ? "VIP" : "Không")
-                            </button>
-                        </td>
-                        <td class="text-center">@c.DealsCount</td>
-                        <td class="text-end fw-semibold">@String.Format("{0:N0}", c.DealsValue)</td>
-                        <td class="text-center">
-                            <form method="post" asp-page-handler="AssignEmployee" class="d-inline-flex gap-2 align-items-center">
-                                <input type="hidden" name="AssignCustomerId" value="@c.CustomerID" />
-                                <select name="SelectedEmployeeId" class="form-select form-select-sm shadow-sm" style="min-width: 180px">
-                                    <option value="">-- Chọn --</option>
-                                    @foreach (var emp in Model.Employees)
-                                    {
-                                        <option value="@emp.UserID" selected="@(emp.UserID == c.AssignedToUserID)">@emp.FullName</option>
-                                    }
-                                </select>
-                                <button class="btn btn-sm btn-gradient-mgr">Gán</button>
-                            </form>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-link text-success p-0 me-2" onclick="openDetail(@c.CustomerID)">Chi tiết</button>
-                            |
-                            <a class="btn btn-link text-primary p-0 ms-2" asp-page="/Manager/Customer/Edit" asp-route-id="@c.CustomerID">Sửa</a>
-                        </td>
-                    </tr>
+                    foreach (var c in Model.Customers)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@c.CompanyName</td>
+                            <td>@c.Industry</td>
+                            <td class="text-center">
+                                <button type="button"
+                                        class="btn btn-sm @(c.VIP ? "btn-warning text-dark" : "btn-outline-secondary")"
+                                        onclick="openVipModal(@c.CustomerID, @c.VIP.ToString().ToLower())">
+                                    @(c.VIP ? "VIP" : "Không")
+                                </button>
+                            </td>
+                            <td class="text-center">@c.DealsCount</td>
+                            <td class="text-end fw-semibold">@String.Format("{0:N0}", c.DealsValue)</td>
+                            <td class="text-center">
+                                <form method="post" asp-page-handler="AssignEmployee" class="d-inline-flex gap-2 align-items-center">
+                                    <input type="hidden" name="AssignCustomerId" value="@c.CustomerID" />
+                                    <select name="SelectedEmployeeId" class="form-select form-select-sm shadow-sm" style="min-width: 180px">
+                                        <option value="">-- Chọn --</option>
+                                        @foreach (var emp in Model.Employees)
+                                        {
+                                            <option value="@emp.UserID" selected="@(emp.UserID == c.AssignedToUserID)">@emp.FullName</option>
+                                        }
+                                    </select>
+                                    <button class="btn btn-sm btn-gradient-mgr">Gán</button>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="openDetail(@c.CustomerID)">Xem</button>
+                                    <a class="btn btn-sm btn-outline-warning" asp-page="/Manager/Customer/Edit" asp-route-id="@c.CustomerID">Sửa</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
-            }
-            else
-            {
-                <tr><td colspan="7" class="text-center text-muted py-4">Không có khách hàng.</td></tr>
-            }
+                else
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">Không có khách hàng.</td></tr>
+                }
             </tbody>
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-        <span>Trang @Model.PageNumber / @Model.TotalPages — @Model.TotalCustomers khách</span>
-        <div class="d-flex gap-2">
-            <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber - 1)"
-               class="btn btn-sm btn-outline-secondary @(Model.PageNumber <= 1 ? "disabled" : "")">Trước</a>
-            @for (int p = 1; p <= Model.TotalPages; p++)
-            {
-                <a asp-page="./Index" asp-route-PageNumber="@p"
-                   class="btn btn-sm @(p == Model.PageNumber ? "btn-warning text-dark" : "btn-outline-secondary")">@p</a>
-            }
-            <a asp-page="./Index" asp-route-PageNumber="@(Model.PageNumber + 1)"
-               class="btn btn-sm btn-outline-secondary @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">Tiếp</a>
-        </div>
-    </div>
+    <!-- Pagination: bỏ hoàn toàn theo yêu cầu (không hiển thị phần Trước/1/Tiếp) -->
 </div>
 
 <!-- Modal: VIP -->
@@ -183,12 +174,27 @@
 
 @section Styles {
     <style>
-        /* Reuse the manager gradient style */
+        /* Gradient xanh lá cho Manager */
         .btn-gradient-mgr {
             background: linear-gradient(180deg, #198754 0%, #20c997 100%);
-            color: #fff; border: none; transition: .3s;
+            color: #fff;
+            border: none;
+            transition: .3s;
         }
-        .btn-gradient-mgr:hover { transform: translateY(-1px); opacity: .95; }
+
+            .btn-gradient-mgr:hover {
+                transform: translateY(-1px);
+                opacity: .95;
+            }
+
+        /* Nút filter/search gọn như mẫu */
+        .btn-filter-mgr {
+            padding: .55rem 1.05rem;
+            font-weight: 500;
+            font-size: .85rem;
+            min-width: 110px;
+            border-radius: .45rem;
+        }
 
         .text-gradient-mgr {
             background: linear-gradient(180deg, #198754 0%, #20c997 100%);
@@ -196,8 +202,35 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .glass-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.92); border-radius: 14px; color: #212529; }
-        .table-card { background: #fff; border-radius: .75rem; }
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,.92);
+            border-radius: 14px;
+            color: #212529;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: .75rem;
+        }
+
+        /* Dải tiêu đề bảng */
+        .table-title-band {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .6rem 1rem;
+            color: #fff;
+            border-radius: .5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08);
+        }
+
+        .table-title-band-mgr {
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
+            box-shadow: 0 3px 12px rgba(25,135,84,.25);
+        }
     </style>
 }
 

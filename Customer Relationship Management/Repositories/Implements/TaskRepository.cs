@@ -19,6 +19,7 @@ namespace Customer_Relationship_Management.Repositories.Implements
         {
             return await _context.Tasks
                 .Include(t => t.RelatedDeal)
+                .Include(t => t.AssignedToUser)
                 .Where(t => !t.IsDeleted && t.AssignedToUserID == employeeId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -56,6 +57,39 @@ namespace Customer_Relationship_Management.Repositories.Implements
             task.IsDeleted = true;
             task.UpdatedAt = DateTime.UtcNow;
 
+            _context.Tasks.Update(task);
+            await _context.SaveChangesAsync();
+        }
+
+        // NEW: cho Manager
+        public async System.Threading.Tasks.Task<IEnumerable<ModelTask>> GetByAssignedUserIdsAsync(IEnumerable<int> userIds)
+        {
+            var set = userIds.ToHashSet();
+            return await _context.Tasks
+                .Include(t => t.AssignedToUser)
+                .Where(t => !t.IsDeleted && set.Contains(t.AssignedToUserID))
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async System.Threading.Tasks.Task<ModelTask?> GetByIdForAssignedUserIdsAsync(int taskId, IEnumerable<int> userIds)
+        {
+            var set = userIds.ToHashSet();
+            return await _context.Tasks
+                .Include(t => t.AssignedToUser)
+                .FirstOrDefaultAsync(t => t.TaskID == taskId && !t.IsDeleted && set.Contains(t.AssignedToUserID));
+        }
+
+        public async System.Threading.Tasks.Task SoftDeleteByManagerAsync(int taskId, IEnumerable<int> teamUserIds)
+        {
+            var set = teamUserIds.ToHashSet();
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.TaskID == taskId && !t.IsDeleted);
+            if (task == null) return;
+            if (!set.Contains(task.AssignedToUserID))
+                throw new UnauthorizedAccessException("Task không thuộc team của bạn.");
+
+            task.IsDeleted = true;
+            task.UpdatedAt = DateTime.UtcNow;
             _context.Tasks.Update(task);
             await _context.SaveChangesAsync();
         }

@@ -1,0 +1,351 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Manager.Task.IndexModel
+@{
+    ViewData["Title"] = "Quản lý Task Team";
+    ViewData["ActiveMenu"] = "ManagerTasks";
+    Layout = "_LayoutManager";
+}
+
+<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý công việc & lịch hẹn</h2>
+            <p class="text-muted mb-0 small">Xem, giao, nhắc nhở và chỉnh sửa task trong team</p>
+        </div>
+    </div>
+
+    @foreach (var key in new[] { "SuccessMessage", "ErrorMessage", "InfoMessage" })
+    {
+        if (TempData[key] is string msg)
+        {
+            var cls = key == "SuccessMessage" ? "success" : key == "ErrorMessage" ? "danger" : "info";
+            <div class="alert alert-@cls alert-dismissible fade show small">
+                @msg
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    }
+
+    <!-- Bộ lọc -->
+    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+        <div class="card-body row g-2 align-items-end small">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Từ khóa</label>
+                <input type="text" name="Keyword" value="@Model.Keyword" class="form-control form-control-sm" placeholder="Tiêu đề / mô tả..." />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Trạng thái</label>
+                <select name="Status" class="form-select form-select-sm">
+                    <option value="">-- All --</option>
+                    @foreach (var s in new[] { "Pending", "In-Progress", "Done" })
+                    {
+                        <option value="@s" selected="@(Model.Status == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Nhân viên</label>
+                <select name="AssignedTo" class="form-select form-select-sm">
+                    <option value="">-- All --</option>
+                    @foreach (var emp in Model.Team)
+                    {
+                        <option value="@emp.UserID" selected="@(Model.AssignedTo == emp.UserID)">@emp.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Hạn từ</label>
+                <input type="date" name="FromDue" value="@Model.FromDue?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Hạn đến</label>
+                <input type="date" name="ToDue" value="@Model.ToDue?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-12 filter-actions mt-1">
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-gradient-mgr btn-filter-mgr" type="submit">Lọc</button>
+                    <a asp-page="./Index" class="btn btn-gradient-mgr btn-filter-mgr">Đặt lại</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Bảng -->
+    <div class="table-responsive card table-card p-3">
+        <div class="table-title-band table-title-band-mgr mb-2">
+            <div class="fw-semibold">Danh sách công việc & lịch hẹn</div>
+            <small class="opacity-75">Theo dõi tiến độ công việc trong team</small>
+        </div>
+        <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Tiêu đề</th>
+                    <th>Nhân viên</th>
+                    <th>Hạn</th>
+                    <th>Trạng thái</th>
+                    <th class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Tasks.Any())
+                {
+                    foreach (var t in Model.Tasks)
+                    {
+                        var badge = t.Status?.ToLower() switch
+                        {
+                            "done" => "success",
+                            "in-progress" => "warning text-dark",
+                            _ => "secondary"
+                        };
+                        var danger = t.DueDate != null && t.DueDate < DateTime.UtcNow && t.Status != "Done" ? "table-danger" : "";
+                        <tr class="@danger">
+                            <td>@t.TaskID</td>
+                            <td class="fw-semibold">@t.Title</td>
+                            <td>@t.AssignedToUser?.FullName</td>
+                            <td>@(t.DueDate?.ToLocalTime().ToString("dd/MM HH:mm") ?? "—")</td>
+                            <td><span class="badge bg-@badge">@t.Status</span></td>
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-1">
+                                    <button type="button" class="btn btn-outline-info btn-sm btn-detail"
+                                            data-url="@Url.Page("./Index", null, new { handler = "TaskDetail", id = t.TaskID }, null)">
+                                        Xem
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm btn-edit"
+                                            data-url="@Url.Page("./Index", null, new { handler = "TaskDetail", id = t.TaskID }, null)">
+                                        Sửa
+                                    </button>
+                                    <form method="post" asp-page-handler="Delete" class="d-inline">
+                                        <input type="hidden" name="id" value="@t.TaskID" />
+                                        <button type="button" class="btn btn-outline-danger btn-sm js-confirm"
+                                                data-title="Xóa Task?"
+                                                data-text="Bạn chắc chắn muốn xóa Task #@t.TaskID - @t.Title?"
+                                                data-icon="warning"
+                                                data-confirm="#dc3545">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="6" class="text-muted text-center">Không có Task.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal & hidden form giữ nguyên -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalTitle">Chi tiết Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="taskModalBody">
+                <div class="text-muted">Đang tải...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-warning btn-sm d-none" id="btnSwitchEdit">Chỉnh sửa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="editTaskForm" method="post" asp-page-handler="Edit" class="d-none">
+    <input type="hidden" name="EditTask.TaskID" />
+    <input type="hidden" name="EditTask.Title" />
+    <input type="hidden" name="EditTask.Description" />
+    <input type="hidden" name="EditTask.DueDate" />
+    <input type="hidden" name="EditTask.ReminderAt" />
+    <input type="hidden" name="EditTask.Status" />
+</form>
+
+@section Styles {
+    <style>
+        .btn-gradient-mgr {
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
+            color: #fff;
+            border: none;
+            transition: .3s
+        }
+
+            .btn-gradient-mgr:hover {
+                transform: translateY(-1px);
+                opacity: .95
+            }
+
+        .btn-filter-mgr {
+            padding: .55rem 1.05rem;
+            font-weight: 500;
+            font-size: .85rem;
+            min-width: 84px;
+            border-radius: .45rem;
+        }
+
+        .filter-actions {
+            margin-top: .25rem;
+        }
+
+        .text-gradient-mgr {
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,.92);
+            border-radius: 14px;
+            color: #212529
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: .75rem
+        }
+
+        .table-title-band {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .6rem 1rem;
+            color: #fff;
+            border-radius: .5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08);
+        }
+
+        .table-title-band-mgr {
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
+            box-shadow: 0 3px 12px rgba(25,135,84,.25);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const $=(s,r=document)=>r.querySelector(s);
+        const modalEl=$('#taskModal'); const modal=bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        document.addEventListener('click', async (e)=>{
+          const btnDetail=e.target.closest('.btn-detail');
+          const btnEdit=e.target.closest('.btn-edit');
+          const confirmBtn=e.target.closest('.js-confirm');
+
+          if(confirmBtn){
+            e.preventDefault();
+            const form=confirmBtn.closest('form');
+            Swal.fire({
+              title:confirmBtn.dataset.title||'Xác nhận?',
+              text:confirmBtn.dataset.text||'Bạn chắc chắn?',
+              icon:confirmBtn.dataset.icon||'question',
+              showCancelButton:true,
+              confirmButtonText:'Xác nhận',
+              cancelButtonText:'Hủy',
+              confirmButtonColor:confirmBtn.dataset.confirm||'#198754',
+              cancelButtonColor:'#6c757d'
+            }).then(r=>{ if(r.isConfirmed) form.submit(); });
+            return;
+          }
+
+          if(btnDetail||btnEdit){
+            const url=(btnDetail||btnEdit).dataset.url;
+            loadTask(url, !!btnEdit);
+            return;
+          }
+        });
+
+        async function loadTask(url, edit){
+          $('#taskModalTitle').textContent= edit? 'Sửa Task':'Chi tiết Task';
+          $('#taskModalBody').innerHTML='<div class="text-muted">Đang tải...</div>';
+          $('#btnSwitchEdit').classList.toggle('d-none', edit===true);
+          modal.show();
+          try{
+            const res=await fetch(url,{credentials:'include'});
+            const d=await res.json();
+            if(!d){ $('#taskModalBody').innerHTML='<div class="text-danger">Không tìm thấy.</div>'; return; }
+            if(edit) renderEdit(d); else renderDetail(d);
+          }catch{
+            $('#taskModalBody').innerHTML='<div class="text-danger">Lỗi tải.</div>';
+          }
+        }
+
+        function renderDetail(d){
+          $('#taskModalBody').innerHTML=`
+            <div class="small">
+              <p><strong>ID:</strong> ${d.taskID}</p>
+              <p><strong>Tiêu đề:</strong> ${esc(d.title||'')}</p>
+              <p><strong>Nhân viên:</strong> ${esc(d.assignedName||'(Chưa gán)')}</p>
+              <p><strong>Trạng thái:</strong> ${d.status||'Pending'}</p>
+              <p><strong>Hạn:</strong> ${d.dueDate? new Date(d.dueDate).toLocaleString():'—'}</p>
+              <p><strong>Nhắc:</strong> ${d.reminderAt? new Date(d.reminderAt).toLocaleString():'—'}</p>
+              <p><strong>Mô tả:</strong><br/> ${esc(d.description||'Không có')}</p>
+            </div>`;
+          $('#btnSwitchEdit').onclick=()=>renderEdit(d);
+        }
+
+        function renderEdit(d){
+          $('#taskModalTitle').textContent='Chỉnh sửa Task';
+          $('#btnSwitchEdit').classList.add('d-none');
+          $('#taskModalBody').innerHTML=`
+           <form id="inlineEditForm" class="row g-2 small">
+             <div class="col-md-6">
+               <label class="form-label fw-semibold">Tiêu đề</label>
+               <input name="Title" class="form-control form-control-sm" maxlength="200" value="${escAttr(d.title||'')}"/>
+             </div>
+             <div class="col-md-6">
+               <label class="form-label fw-semibold">Trạng thái</label>
+               <select name="Status" class="form-select form-select-sm">
+                 ${["Pending","In-Progress","Done"].map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s}</option>`).join('')}
+               </select>
+             </div>
+             <div class="col-12">
+               <label class="form-label fw-semibold">Mô tả</label>
+               <textarea name="Description" rows="2" class="form-control form-control-sm">${esc(d.description||'')}</textarea>
+             </div>
+             <div class="col-md-6">
+               <label class="form-label fw-semibold">Hạn</label>
+               <input type="datetime-local" name="DueDate" class="form-control form-control-sm"
+                      value="${d.dueDate? new Date(d.dueDate).toISOString().slice(0,16):''}"/>
+             </div>
+             <div class="col-md-6">
+               <label class="form-label fw-semibold">Nhắc</label>
+               <input type="datetime-local" name="ReminderAt" class="form-control form-control-sm"
+                      value="${d.reminderAt? new Date(d.reminderAt).toISOString().slice(0,16):''}"/>
+             </div>
+             <div class="col-12 text-end">
+               <button class="btn btn-gradient-mgr btn-filter-mgr" id="btnSaveEdit">Lưu</button>
+             </div>
+           </form>`;
+          $('#btnSaveEdit').onclick=(e)=>{
+            e.preventDefault();
+            const f=$('#inlineEditForm');
+            pushEdit(d.taskID,f);
+          };
+        }
+
+        function pushEdit(taskID, form){
+          const g=n=>form.querySelector(`[name="${n}"]`)?.value.trim()||'';
+          const ef=$('#editTaskForm');
+          ef.querySelector('[name="EditTask.TaskID"]').value=taskID;
+          ef.querySelector('[name="EditTask.Title"]').value=g('Title');
+          ef.querySelector('[name="EditTask.Description"]').value=g('Description');
+          ef.querySelector('[name="EditTask.DueDate"]').value=g('DueDate');
+          ef.querySelector('[name="EditTask.ReminderAt"]').value=g('ReminderAt');
+          ef.querySelector('[name="EditTask.Status"]').value=g('Status');
+          ef.submit();
+        }
+
+        function esc(str){ return (str||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+        function escAttr(str){ return esc(str).replace(/"/g,'&quot;'); }
+    </script>
+}

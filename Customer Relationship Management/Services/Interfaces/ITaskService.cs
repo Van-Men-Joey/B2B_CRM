@@ -8,16 +8,19 @@ namespace Customer_Relationship_Management.Services.Interfaces
 
     public interface ITaskService
     {
+        // Employee scope
         Task<IEnumerable<ModelTask>> GetMyTasksAsync(int employeeId);
         Task<IEnumerable<ModelTask>> GetDueSoonAsync(int employeeId, int daysAhead = 3);
-
-        // CRUD đầy đủ
         Task<(bool Success, string Message)> CreateAsync(ModelTask task, int employeeId);
         Task<ModelTask?> GetByIdForEmployeeAsync(int taskId, int employeeId);
         Task<(bool Success, string Message)> UpdateAsync(ModelTask task, int employeeId);
         Task<(bool Success, string Message)> SoftDeleteAsync(int taskId, int employeeId);
-
-        // Cập nhật nhanh trạng thái
         Task<(bool Success, string Message)> UpdateStatusAsync(int taskId, string status, int employeeId);
+
+        // Manager scope (NEW, additive – không phá code cũ)
+        Task<IEnumerable<ModelTask>> GetTeamTasksAsync(int managerUserId);
+        Task<ModelTask?> GetByIdForManagerAsync(int taskId, int managerUserId);
+        Task<(bool Success, string Message)> ManagerUpdateAsync(ModelTask task, int managerUserId);
+        Task<(bool Success, string Message)> ManagerSoftDeleteAsync(int taskId, int managerUserId);
     }
 }

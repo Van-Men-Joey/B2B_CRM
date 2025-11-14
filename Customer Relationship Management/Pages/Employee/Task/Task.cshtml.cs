@@ -21,7 +21,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
         public List<Models.Task> Tasks { get; set; } = new();
         public List<Models.Task> DueSoon { get; set; } = new();
 
-        // Bộ lọc
+        // Filters
         [BindProperty(SupportsGet = true)] public string? Keyword { get; set; }
         [BindProperty(SupportsGet = true)] public string? Status { get; set; }
         [BindProperty(SupportsGet = true)] public DateTime? FromDue { get; set; }
@@ -39,8 +39,8 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
             public DateTime? DueDate { get; set; }
             public DateTime? ReminderAt { get; set; }
 
-            [RegularExpression("^(Pending|In-Progress|Done)?$", ErrorMessage = "Trạng thái không hợp lệ.")]
-            public string? Status { get; set; } // default Pending
+            // Không cho chọn trạng thái khi tạo (luôn Pending)
+            public string? Status { get; set; }
         }
 
         // Edit form
@@ -57,7 +57,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
             public DateTime? DueDate { get; set; }
             public DateTime? ReminderAt { get; set; }
 
-            [RegularExpression("^(Pending|In-Progress|Done)?$", ErrorMessage = "Trạng thái không hợp lệ.")]
+            // Nhân viên không được đổi trạng thái
             public string? Status { get; set; }
         }
 
@@ -92,7 +92,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
             return Page();
         }
 
-        // JSON chi tiết cho modal xem/sửa
+        // JSON detail
         public async System.Threading.Tasks.Task<JsonResult> OnGetTaskDetailAsync(int id)
         {
             var userIdClaim = User.FindFirst("UserID")?.Value;
@@ -103,7 +103,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
             return new JsonResult(task);
         }
 
-        // Add – chỉ validate AddTask
+        // Add – ép Pending
         public async System.Threading.Tasks.Task<IActionResult> OnPostAddAsync()
         {
             var userIdClaim = User.FindFirst("UserID")?.Value;
@@ -125,7 +125,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
                 Description = string.IsNullOrWhiteSpace(AddTask.Description) ? null : AddTask.Description.Trim(),
                 DueDate = AddTask.DueDate,
                 ReminderAt = AddTask.ReminderAt,
-                Status = string.IsNullOrWhiteSpace(AddTask.Status) ? "Pending" : AddTask.Status!
+                Status = "Pending" // ÉP pending
             };
 
             var (ok, msg) = await _taskService.CreateAsync(entity, employeeId);
@@ -133,7 +133,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
             return RedirectToPage();
         }
 
-        // Edit – chỉ validate EditTask
+        // Edit – nhân viên không đổi trạng thái
         public async System.Threading.Tasks.Task<IActionResult> OnPostEditAsync()
         {
             var userIdClaim = User.FindFirst("UserID")?.Value;
@@ -160,8 +160,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
                 current.Title != EditTask.Title ||
                 (current.Description ?? "") != (EditTask.Description ?? "") ||
                 current.DueDate != EditTask.DueDate ||
-                current.ReminderAt != EditTask.ReminderAt ||
-                (!string.IsNullOrWhiteSpace(EditTask.Status) && !string.Equals(current.Status, EditTask.Status, StringComparison.OrdinalIgnoreCase));
+                current.ReminderAt != EditTask.ReminderAt;
 
             if (!changed)
             {
@@ -176,7 +175,7 @@ namespace Customer_Relationship_Management.Pages.Employee.Task
                 Description = EditTask.Description,
                 DueDate = EditTask.DueDate,
                 ReminderAt = EditTask.ReminderAt,
-                Status = EditTask.Status
+                Status = null // KHÔNG cập nhật trạng thái từ employee
             };
 
             var (ok, msg) = await _taskService.UpdateAsync(toUpdate, employeeId);

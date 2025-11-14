@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Customer_Relationship_Management.Models;
-using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Customer_Relationship_Management.Services.Interfaces;
 
 namespace Customer_Relationship_Management.Pages.Manager.Customer
 {
@@ -39,20 +37,20 @@ namespace Customer_Relationship_Management.Pages.Manager.Customer
         public int TotalPages { get; set; }
 
         // Assign user
-        public List<User> Employees { get; set; } = new();
+        public List<Models.User> Employees { get; set; } = new();
         [BindProperty] public int? SelectedEmployeeId { get; set; }
         [BindProperty] public int AssignCustomerId { get; set; }
 
         // VIP toggle
         [BindProperty] public int VipCustomerId { get; set; }
 
-        public async Task<IActionResult> OnGetAsync()
+        public async System.Threading.Tasks.Task<IActionResult> OnGetAsync()
         {
             await LoadDataAsync();
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAssignEmployeeAsync()
+        public async System.Threading.Tasks.Task<IActionResult> OnPostAssignEmployeeAsync()
         {
             if (SelectedEmployeeId == null)
             {
@@ -77,7 +75,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Customer
             return RedirectToPage(new { SearchTerm, PageNumber, SortBy, SortDir });
         }
 
-        public async Task<IActionResult> OnPostToggleVIPAsync()
+        public async System.Threading.Tasks.Task<IActionResult> OnPostToggleVIPAsync()
         {
             var managerId = GetCurrentUserId();
             var (success, message) = await _customerService.ToggleVIPAsync(VipCustomerId, managerId);
@@ -86,7 +84,7 @@ namespace Customer_Relationship_Management.Pages.Manager.Customer
             return RedirectToPage(new { SearchTerm, PageNumber, SortBy, SortDir });
         }
 
-        private async Task LoadDataAsync()
+        private async System.Threading.Tasks.Task LoadDataAsync()
         {
             var managerId = GetCurrentUserId();
 
@@ -153,13 +151,9 @@ namespace Customer_Relationship_Management.Pages.Manager.Customer
 
         private int GetCurrentUserId()
         {
-            var idClaim = User.FindFirst("UserID"); // đọc đúng key
-
-            return idClaim != null && int.TryParse(idClaim.Value, out var id)
-                ? id
-                : 0;
+            var idClaim = User.FindFirst("UserID");
+            return idClaim != null && int.TryParse(idClaim.Value, out var id) ? id : 0;
         }
-
 
         public class CustomerRowViewModel
         {

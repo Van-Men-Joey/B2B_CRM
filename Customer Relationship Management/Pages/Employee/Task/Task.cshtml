@@ -30,13 +30,12 @@
         </div>
     }
 
-    <!-- 1) Heading -->
     <div class="mb-4">
         <h2 class="fw-bold text-gradient mb-0">Danh sách công việc & lịch hẹn (nhắc sắp đến hạn)</h2>
         <p class="text-muted mb-0 small">Theo dõi công việc hằng ngày, nhắc nhở và các cuộc hẹn quan trọng</p>
     </div>
 
-    <!-- 2) Thêm Task mới -->
+    <!-- Thêm Task mới (Status ẩn – luôn Pending) -->
     <div id="addTaskSection" class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
             <h5 class="mb-0">Thêm công việc / lịch hẹn</h5>
@@ -52,14 +51,8 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label asp-for="AddTask.Status" class="form-label fw-semibold">Trạng thái</label>
-                    <select asp-for="AddTask.Status" class="form-select">
-                        <option value="">(mặc định Pending)</option>
-                        <option value="Pending">Pending</option>
-                        <option value="In-Progress">In-Progress</option>
-                        <option value="Done">Done</option>
-                    </select>
-                    <span asp-validation-for="AddTask.Status" class="text-danger"></span>
+                    <label class="form-label fw-semibold">Trạng thái</label>
+                    <input class="form-control" value="Pending" disabled />
                 </div>
 
                 <div class="col-12">
@@ -84,7 +77,7 @@
         </div>
     </div>
 
-    <!-- 3) Bộ lọc -->
+    <!-- Bộ lọc -->
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-body row g-3 align-items-end">
             <div class="col-md-4">
@@ -115,7 +108,7 @@
         </div>
     </form>
 
-    <!-- 4) Danh sách công việc & lịch hẹn -->
+    <!-- Danh sách -->
     <div class="card border-0 shadow-lg glass-card">
         <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
             <h5 class="mb-0 fw-semibold">Danh sách công việc & lịch hẹn</h5>
@@ -174,7 +167,7 @@
     </div>
 </div>
 
-<!-- Modal: Xem chi tiết -->
+<!-- Modal chi tiết -->
 <div class="modal fade" id="taskDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
@@ -189,7 +182,7 @@
     </div>
 </div>
 
-<!-- Modal: Sửa Task -->
+<!-- Modal Sửa (không có Status) -->
 <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
@@ -204,16 +197,6 @@
                         <label asp-for="EditTask.Title" class="form-label fw-semibold">Tiêu đề</label>
                         <input asp-for="EditTask.Title" class="form-control" />
                         <span asp-validation-for="EditTask.Title" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EditTask.Status" class="form-label fw-semibold">Trạng thái</label>
-                        <select asp-for="EditTask.Status" class="form-select">
-                            <option value="">(giữ nguyên)</option>
-                            <option value="Pending">Pending</option>
-                            <option value="In-Progress">In-Progress</option>
-                            <option value="Done">Done</option>
-                        </select>
-                        <span asp-validation-for="EditTask.Status" class="text-danger"></span>
                     </div>
                     <div class="col-12">
                         <label asp-for="EditTask.Description" class="form-label fw-semibold">Mô tả</label>
@@ -236,7 +219,7 @@
     </div>
 </div>
 
-<!-- Modal: Xác nhận Thêm -->
+<!-- Modal xác nhận Thêm -->
 <div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
@@ -255,7 +238,7 @@
     </div>
 </div>
 
-<!-- Modal: Xác nhận Sửa -->
+<!-- Modal xác nhận Sửa -->
 <div class="modal fade" id="confirmEditModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
@@ -274,7 +257,7 @@
     </div>
 </div>
 
-<!-- Modal: Xác nhận Xóa -->
+<!-- Modal xác nhận Xóa -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
@@ -327,19 +310,16 @@
             background: linear-gradient(45deg,#007bff,#00b4ff)
         }
 
-        .actions-header,
-        .actions-cell {
+        .actions-header, .actions-cell {
             text-align: center !important;
             vertical-align: middle;
             white-space: nowrap;
         }
 
-            /* Bảo đảm nhóm nút không bị dính mép phải */
             .actions-cell .d-flex {
-                min-width: 140px; /* tùy chọn */
+                min-width: 140px;
             }
 
-            /* Khoảng cách và kích thước nút gọn */
             .actions-cell .btn {
                 min-width: 46px;
                 padding: 4px 10px;
@@ -352,7 +332,6 @@
     <script>
         const $ = (s, r=document)=>r.querySelector(s);
 
-        // Delegation cho nút thao tác
         document.addEventListener('click', async (e) => {
             const viewBtn = e.target.closest('.btn-view');
             const editBtn = e.target.closest('.btn-edit');
@@ -399,7 +378,6 @@
                     $('#editTaskForm textarea[name="EditTask.Description"]').value = data.description || '';
                     $('#editTaskForm input[name="EditTask.DueDate"]').value = data.dueDate ? new Date(data.dueDate).toISOString().slice(0,16) : '';
                     $('#editTaskForm input[name="EditTask.ReminderAt"]').value = data.reminderAt ? new Date(data.reminderAt).toISOString().slice(0,16) : '';
-                    $('#editTaskForm select[name="EditTask.Status"]').value = data.status || '';
                     new bootstrap.Modal(document.getElementById('editTaskModal')).show();
                 } catch {
                     alert('Lỗi khi tải dữ liệu để chỉnh sửa.');
@@ -417,10 +395,8 @@
             }
         });
 
-        // Submit delete
         $('#confirmDeleteBtn')?.addEventListener('click', () => $('#deleteForm').submit());
 
-        // Xác nhận thêm (chặn vòng lặp submit)
         const addForm = document.getElementById('addTaskForm');
         const addConfirmModal = new bootstrap.Modal(document.getElementById('confirmAddModal'));
         let bypassAdd = false;
@@ -430,7 +406,7 @@
             const gv = n => addForm.querySelector(`[name="${n}"]`)?.value || '';
             document.getElementById('confirmAddContent').innerHTML = `
                 <p><strong>Tiêu đề:</strong> ${gv('AddTask.Title')}</p>
-                <p><strong>Trạng thái:</strong> ${gv('AddTask.Status') || 'Pending'}</p>
+                <p><strong>Trạng thái:</strong> Pending</p>
                 <p><strong>Hạn:</strong> ${gv('AddTask.DueDate') || '—'}</p>
                 <p><strong>Nhắc tại:</strong> ${gv('AddTask.ReminderAt') || '—'}</p>
                 <p><strong>Mô tả:</strong> ${gv('AddTask.Description') || 'Không có'}</p>`;
@@ -438,7 +414,6 @@
         });
         document.getElementById('confirmAddBtn')?.addEventListener('click', () => { addConfirmModal.hide(); bypassAdd = true; addForm.requestSubmit(); });
 
-        // Xác nhận sửa (chặn vòng lặp submit)
         const editForm = document.getElementById('editTaskForm');
         const editConfirmModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
         let bypassEdit = false;
@@ -448,7 +423,6 @@
             const gv = n => editForm.querySelector(`[name="${n}"]`)?.value || '';
             document.getElementById('confirmEditContent').innerHTML = `
                 <p><strong>Tiêu đề:</strong> ${gv('EditTask.Title')}</p>
-                <p><strong>Trạng thái:</strong> ${gv('EditTask.Status') || '(giữ nguyên)'}</p>
                 <p><strong>Hạn:</strong> ${gv('EditTask.DueDate') || '—'}</p>
                 <p><strong>Nhắc tại:</strong> ${gv('EditTask.ReminderAt') || '—'}</p>
                 <p><strong>Mô tả:</strong> ${gv('EditTask.Description') || 'Không có'}</p>`;

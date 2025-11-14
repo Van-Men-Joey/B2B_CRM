@@ -124,17 +124,14 @@
                 <a class="nav-link @(currentPath.StartsWith("/Manager/Deal") ? "active" : "")" asp-page="/Manager/Deal/Index">
                     <i class="bi bi-briefcase-fill me-2"></i> Deal / Hợp Đồng
                 </a>
-                <a class="nav-link @(currentPath.StartsWith("/Manager/Tasks") ? "active" : "")" asp-page="/Manager/Tasks">
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Task") ? "active" : "")" asp-page="/Manager/Task/Index">
                     <i class="bi bi-calendar-check-fill me-2"></i> Task / Công Việc
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/Manager/Contract") ? "active" : "")" asp-page="/Manager/Contract/Index">
                     <i class="bi bi-file-earmark-text-fill me-2"></i> Contract & Quotation / Hợp Đồng & Báo Giá
                 </a>
-                <a class="nav-link @(currentPath.StartsWith("/Manager/Tickets") ? "active" : "")" asp-page="/Manager/Tickets">
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Support") ? "active" : "")" asp-page="/Manager/Support/Index">
                     <i class="bi bi-ticket-perforated-fill me-2"></i> Support / Hỗ Trợ
-                </a>
-                <a class="nav-link @(currentPath.StartsWith("/Manager/Accounts") ? "active" : "")" asp-page="/Manager/Accounts">
-                    <i class="bi bi-person-gear me-2"></i> Employee / Nhân Viên
                 </a>
             </nav>
         </aside>

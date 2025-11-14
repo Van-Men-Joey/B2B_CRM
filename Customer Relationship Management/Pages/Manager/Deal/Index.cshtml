@@ -6,7 +6,7 @@
 }
 
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
-    <!-- Header -->
+    <!-- Heading -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý Deal</h2>
@@ -36,14 +36,7 @@
                     <option value="">-- Tất cả --</option>
                     @foreach (var s in stages)
                     {
-                        if (!string.IsNullOrEmpty(Model.Stage) && string.Equals(Model.Stage, s, StringComparison.OrdinalIgnoreCase))
-                        {
-                            <option value="@s" selected>@s</option>
-                        }
-                        else
-                        {
-                            <option value="@s">@s</option>
-                        }
+                        <option value="@s" selected="@(string.Equals(Model.Stage, s, StringComparison.OrdinalIgnoreCase))">@s</option>
                     }
                 </select>
             </div>
@@ -65,19 +58,15 @@
                     <option value="">-- Tất cả --</option>
                     @foreach (var member in Model.TeamMembers)
                     {
-                        if (Model.SelectedEmployeeId.HasValue && Model.SelectedEmployeeId.Value == member.UserID)
-                        {
-                            <option value="@member.UserID" selected>@member.FullName</option>
-                        }
-                        else
-                        {
-                            <option value="@member.UserID">@member.FullName</option>
-                        }
+                        <option value="@member.UserID" selected="@(Model.SelectedEmployeeId == member.UserID)">@member.FullName</option>
                     }
                 </select>
             </div>
-            <div class="col-md-1 d-flex gap-2">
-                <button type="submit" class="btn btn-gradient-mgr w-100">Lọc</button>
+            <div class="col-md-12 filter-actions">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-gradient-mgr btn-filter-mgr">Lọc</button>
+                    <a asp-page="./Index" class="btn btn-gradient-mgr btn-filter-mgr">Đặt lại</a>
+                </div>
             </div>
         </div>
     </form>
@@ -94,7 +83,6 @@
                     const pipelineLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Keys));
                     const pipelineValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PipelineSummary.Values));
                 </script>
-
                 <div class="row g-3 mb-3">
                     @foreach (var stage in Model.PipelineSummary)
                     {
@@ -119,7 +107,10 @@
 
     <!-- Danh sách Deal -->
     <div class="table-responsive card table-card p-3 mb-4">
-        <h6 class="fw-semibold mb-3">Danh sách Deal toàn Team</h6>
+        <div class="table-title-band table-title-band-mgr mb-2">
+            <div class="fw-semibold">Danh sách deal</div>
+            <small class="opacity-75">Theo dõi pipeline và chuyển giao</small>
+        </div>
         @if (Model.TeamDeals?.Any() == true)
         {
             <table class="table table-hover align-middle bg-white">
@@ -144,7 +135,7 @@
                             <td>@deal.Value.ToString("N0")</td>
                             <td><span class="badge bg-secondary bg-opacity-75">@deal.Stage</span></td>
                             <td>@deal.Deadline?.ToString("dd/MM/yyyy")</td>
-                            <td>@employee?.FullName</td>
+                            <td>@(employee?.FullName ?? "-")</td>
                             <td>
                                 <form method="post" asp-page-handler="ReassignDeal" class="d-flex gap-2">
                                     <input type="hidden" name="ReassignDealId" value="@deal.DealID" />
@@ -171,7 +162,6 @@
         }
     </div>
 
-    <!-- File tài liệu Deal -->
     @if (Model.DealFiles?.Any() == true)
     {
         <div class="card glass-card border-0 shadow-sm mb-4">
@@ -199,37 +189,66 @@
 @section Styles {
     <style>
         .btn-gradient-mgr {
-            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
             color: #fff;
             border: none;
-            transition: .3s;
+            transition: .3s
         }
 
             .btn-gradient-mgr:hover {
                 transform: translateY(-1px);
-                opacity: .95;
+                opacity: .95
             }
 
+        .btn-filter-mgr {
+            padding: .55rem 1.05rem;
+            font-weight: 500;
+            font-size: .85rem;
+            min-width: 84px;
+            border-radius: .45rem;
+        }
+
+        .filter-actions {
+            margin-top: .25rem;
+        }
+
         .text-gradient-mgr {
-            background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-text-fill-color: transparent
         }
 
         .glass-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255,255,255,.92);
             border-radius: 14px;
-            color: #212529;
+            color: #212529
         }
 
         .table-card {
             background: #fff;
-            border-radius: .75rem;
+            border-radius: .75rem
         }
 
         .table-hover tbody tr:hover {
-            background-color: #f8f9fa;
+            background-color: #f8f9fa
+        }
+
+        .table-title-band {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .6rem 1rem;
+            color: #fff;
+            border-radius: .5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            box-shadow: 0 3px 12px rgba(0,0,0,.08);
+        }
+
+        .table-title-band-mgr {
+            background: linear-gradient(180deg,#198754 0%,#20c997 100%);
+            box-shadow: 0 3px 12px rgba(25,135,84,.25);
         }
     </style>
 }
@@ -247,7 +266,7 @@
                         label: 'Tổng giá trị (₫)',
                         data: pipelineValues,
                         borderWidth: 1,
-                        backgroundColor: 'rgba(25, 135, 84, 0.6)',
+                        backgroundColor: 'rgba(25,135,84,0.6)',
                         borderColor: '#198754'
                     }]
                 },
