@@ -20,6 +20,7 @@ namespace Customer_Relationship_Management.Repositories.Interfaces
         // ví dụ await userRepo.FindAsync(u => u.Status == "Active");
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
         Task<T?> GetByIdAsNoTrackingAsync(int id);
+        Task<T?> GetByIdAsNoTrackingAsync(int id, params Expression<Func<T, object>>[] includes);
 
         Task AddAsync(T entity);
         void Update(T entity);

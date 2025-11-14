@@ -113,7 +113,11 @@ namespace Customer_Relationship_Management.Services.Implements
         public async Task<(bool Success, string Message)> UpdateDealAsync(Deal deal, int employeeId)
         {
             // ✅ Bước 1: Lấy dữ liệu cũ (NoTracking) để log
-            var oldEntity = await _dealRepository.GetByIdAsNoTrackingAsync(deal.DealID);
+            var oldEntity = await _dealRepository.GetByIdAsNoTrackingAsync(
+      deal.DealID,
+      d => d.Customer
+  );
+
             if (oldEntity == null || oldEntity.IsDeleted)
                 return (false, "Deal không tồn tại.");
             if (oldEntity.Customer == null || oldEntity.Customer.AssignedToUserID != employeeId)
@@ -132,7 +136,7 @@ namespace Customer_Relationship_Management.Services.Implements
             try
             {
                 // ✅ Bước 2: Cập nhật dữ liệu
-                var existing = await _dealRepository.GetByIdAsync(deal.DealID);
+                var existing = await _dealRepository.GetByIdAsync(deal.DealID );
                 if (existing == null)
                     return (false, "Không tìm thấy deal cần cập nhật.");
 

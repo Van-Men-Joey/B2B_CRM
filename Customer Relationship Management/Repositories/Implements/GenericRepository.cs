@@ -78,6 +78,29 @@ namespace Customer_Relationship_Management.Repositories.Implements
             return await _dbSet.AsNoTracking()
                                .FirstOrDefaultAsync(e => EF.Property<int>(e, keyName) == id);
         }
+        public virtual async Task<T?> GetByIdAsNoTrackingAsync(int id, params Expression<Func<T, object>>[] includes)
+        {
+            var entityType = _context.Model.FindEntityType(typeof(T));
+            var primaryKey = entityType?.FindPrimaryKey()?.Properties.FirstOrDefault();
+
+            if (primaryKey == null)
+                throw new InvalidOperationException($"Entity {typeof(T).Name} không có khóa chính.");
+
+            var keyName = primaryKey.Name;
+
+            IQueryable<T> query = _dbSet.AsNoTracking();
+
+            if (includes != null && includes.Length > 0)
+            {
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, keyName) == id);
+        }
+
 
 
 
