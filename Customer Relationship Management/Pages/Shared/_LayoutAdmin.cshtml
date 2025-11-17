@@ -45,34 +45,34 @@
             box-shadow: inset -1px 0 0 rgba(255,255,255,0.06);
         }
 
-        .admin-sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.92);
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            transition: all 0.18s ease;
-        }
+            .admin-sidebar .nav-link {
+                color: rgba(255, 255, 255, 0.92);
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                transition: all 0.18s ease;
+            }
 
-        .admin-sidebar .nav-link:hover {
-            background-color: rgba(255,255,255,0.12);
-            color: #fff;
-        }
+                .admin-sidebar .nav-link:hover {
+                    background-color: rgba(255,255,255,0.12);
+                    color: #fff;
+                }
 
-        .admin-sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.18);
-            color: #fff;
-            position: relative;
-        }
+                .admin-sidebar .nav-link.active {
+                    background-color: rgba(255,255,255,0.18);
+                    color: #fff;
+                    position: relative;
+                }
 
-        .admin-sidebar .nav-link.active::before {
-            content: "";
-            position: absolute;
-            left: -6px;
-            top: 10%;
-            bottom: 10%;
-            width: 4px;
-            border-radius: 4px;
-            background: linear-gradient(180deg, #ffffff, rgba(255,255,255,0.6));
-        }
+                    .admin-sidebar .nav-link.active::before {
+                        content: "";
+                        position: absolute;
+                        left: -6px;
+                        top: 10%;
+                        bottom: 10%;
+                        width: 4px;
+                        border-radius: 4px;
+                        background: linear-gradient(180deg, #ffffff, rgba(255,255,255,0.6));
+                    }
 
         /* Content: white canvas */
         .content-area {
@@ -111,17 +111,6 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            <!-- SETTINGS -->
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-light" data-bs-toggle="dropdown">
-                    <i class="bi bi-gear"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><a class="dropdown-item" asp-page="/Admin/Security"><i class="bi bi-shield-lock me-2"></i> Bảo mật hệ thống</a></li>
-                    <li><a class="dropdown-item" asp-page="/Admin/Backup"><i class="bi bi-hdd-stack me-2"></i> Sao lưu dữ liệu</a></li>
-                </ul>
-            </div>
-
             <!-- USER INFO DROPDOWN -->
             <ul class="navbar-nav align-items-center">
                 <li class="nav-item dropdown">
@@ -170,21 +159,12 @@
                 <a class="nav-link @(ViewData["ActiveMenu"] == "Users" ? "active" : "")" asp-page="/Admin/Account/ManageUser">
                     <i class="bi bi-people-fill me-2"></i> User Management
                 </a>
-                <a class="nav-link @(ViewData["ActiveMenu"] == "Security" ? "active" : "")" asp-page="/Admin/Security">
-                    <i class="bi bi-shield-lock-fill me-2"></i> Role & Security
-                </a>
                 <a class="nav-link @(ViewData["ActiveMenu"] == "Backup" ? "active" : "")" asp-page="/Admin/Backup">
                     <i class="bi bi-hdd-fill me-2"></i> Backup & Restore
-                </a>
-                <a class="nav-link @(ViewData["ActiveMenu"] == "Monitoring" ? "active" : "")" asp-page="/Admin/Monitoring">
-                    <i class="bi bi-graph-up-arrow me-2"></i> System Monitoring
                 </a>
                 <hr class="my-3 text-white-50" />
                 <a class="nav-link @(ViewData["ActiveMenu"] == "Audit" ? "active" : "")" asp-page="/Admin/Audit/Index">
                     <i class="bi bi-journal-text me-2"></i> Audit Logs
-                </a>
-                <a class="nav-link @(ViewData["ActiveMenu"] == "Settings" ? "active" : "")" asp-page="/Admin/Settings">
-                    <i class="bi bi-sliders me-2"></i> System Settings
                 </a>
             </nav>
         </aside>
