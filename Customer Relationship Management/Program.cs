@@ -2,6 +2,7 @@
 using Customer_Relationship_Management.Mappings;
 using Customer_Relationship_Management.Repositories.Implements;
 using Customer_Relationship_Management.Repositories.Interfaces;
+using Customer_Relationship_Management.Services.Implementations;
 using Customer_Relationship_Management.Services.Implements;
 using Customer_Relationship_Management.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -75,9 +76,7 @@ namespace Customer_Relationship_Management
             builder.Services.AddScoped<IDealRepository, DealRepository>();
             builder.Services.AddScoped<IContractRepository, ContractRepository>();
             builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-
-
-
+            builder.Services.AddScoped<IBackupRepository, BackupRepository>();
 
             // Services
             builder.Services.AddScoped<IUserService, UserService>();
@@ -85,8 +84,7 @@ namespace Customer_Relationship_Management
             builder.Services.AddScoped<IAuditLogService, AuditLogService>();
             builder.Services.AddScoped<IDealService, DealService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
-
-
+            builder.Services.AddScoped<IBackupService, BackupService>();
 
             ////chạy trên máy khác
             //builder.WebHost.UseUrls("http://localhost:5197", "http://172.16.71.57:5197");
