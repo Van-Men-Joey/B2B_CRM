@@ -6,7 +6,6 @@
 }
 
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
-    <!-- Heading -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-gradient-mgr mb-0">Quản lý Deal</h2>
@@ -24,7 +23,6 @@
         </div>
     </div>
 
-    <!-- Bộ lọc -->
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-body row g-3 align-items-end">
             <div class="col-md-2">
@@ -71,7 +69,6 @@
         </div>
     </form>
 
-    <!-- Pipeline Summary -->
     <div class="card glass-card border-0 shadow-sm mb-4">
         <div class="card-header bg-transparent pb-0 d-flex justify-content-between align-items-center">
             <h6 class="fw-semibold mb-0">Tổng giá trị Deal theo giai đoạn</h6>
@@ -105,60 +102,79 @@
         </div>
     </div>
 
-    <!-- Danh sách Deal -->
-    <div class="table-responsive card table-card p-3 mb-4">
-        <div class="table-title-band table-title-band-mgr mb-2">
+    <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 12px;">
+        <div class="table-title-band table-title-band-mgr p-3">
             <div class="fw-semibold">Danh sách deal</div>
             <small class="opacity-75">Theo dõi pipeline và chuyển giao</small>
         </div>
+
         @if (Model.TeamDeals?.Any() == true)
         {
-            <table class="table table-hover align-middle bg-white">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Tên Deal</th>
-                        <th>Giá trị (₫)</th>
-                        <th>Giai đoạn</th>
-                        <th>Deadline</th>
-                        <th>Nhân viên phụ trách</th>
-                        <th style="width:260px">Chuyển giao</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var deal in Model.TeamDeals)
-                    {
-                        var employee = Model.TeamMembers.FirstOrDefault(e => e.UserID == deal.Customer.AssignedToUserID);
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
                         <tr>
-                            <td>@deal.DealID</td>
-                            <td class="fw-semibold">@deal.DealName</td>
-                            <td>@deal.Value.ToString("N0")</td>
-                            <td><span class="badge bg-secondary bg-opacity-75">@deal.Stage</span></td>
-                            <td>@deal.Deadline?.ToString("dd/MM/yyyy")</td>
-                            <td>@(employee?.FullName ?? "-")</td>
-                            <td>
-                                <form method="post" asp-page-handler="ReassignDeal" class="d-flex gap-2">
-                                    <input type="hidden" name="ReassignDealId" value="@deal.DealID" />
-                                    <select name="NewEmployeeId" class="form-select form-select-sm">
-                                        <option value="">-- Chọn nhân viên --</option>
-                                        @foreach (var member in Model.TeamMembers)
-                                        {
-                                            <option value="@member.UserID">@member.FullName</option>
-                                        }
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-gradient-mgr d-inline-flex align-items-center px-3">
-                                        Chuyển
-                                    </button>
-                                </form>
-                            </td>
+                            <th>#</th>
+                            <th>Tên Deal</th>
+                            <th>Giá trị (₫)</th>
+                            <th>Giai đoạn</th>
+                            <th>Deadline</th>
+                            <th>Nhân viên phụ trách</th>
+                            <th style="width:260px">Chuyển giao</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var deal in Model.TeamDeals)
+                        {
+                            var employee = Model.TeamMembers.FirstOrDefault(e => e.UserID == deal.Customer.AssignedToUserID);
+                            // Logic nhấn mạnh (Giả định: Quá hạn và chưa "Closed Won/Lost")
+                            var isOverdue = deal.Deadline.HasValue && deal.Deadline.Value < DateTime.Today &&
+                            !string.Equals(deal.Stage, "Closed Won", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(deal.Stage, "Closed Lost", StringComparison.OrdinalIgnoreCase);
+
+                            <tr class="@(isOverdue ? "table-danger-custom" : "")">
+                                <td>@deal.DealID</td>
+                                <td class="fw-semibold">@deal.DealName</td>
+                                <td>@deal.Value.ToString("N0")</td>
+                                <td>
+                                    @{
+                                        string badgeClass = deal.Stage switch
+                                        {
+                                            "Closed Won" => "bg-success",
+                                            "Closed Lost" => "bg-danger",
+                                            "Contract Sent" => "bg-info",
+                                            "Negotiation" => "bg-warning text-dark",
+                                            _ => "bg-secondary"
+                                        };
+                                        <span class="badge @badgeClass bg-opacity-75">@deal.Stage</span>
+                                    }
+                                </td>
+                                <td class="@(isOverdue ? "fw-bold" : "")">@deal.Deadline?.ToString("dd/MM/yyyy")</td>
+                                <td>@(employee?.FullName ?? "-")</td>
+                                <td>
+                                    <form method="post" asp-page-handler="ReassignDeal" class="d-inline-flex gap-2">
+                                        <input type="hidden" name="ReassignDealId" value="@deal.DealID" />
+                                        <select name="NewEmployeeId" class="form-select form-select-sm">
+                                            <option value="">-- Chọn nhân viên --</option>
+                                            @foreach (var member in Model.TeamMembers)
+                                            {
+                                                <option value="@member.UserID">@member.FullName</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-gradient-mgr d-inline-flex align-items-center px-3">
+                                            Chuyển
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
         else
         {
-            <p class="text-muted mb-0">Không có deal nào trong team.</p>
+            <p class="text-muted mb-0 p-3">Không có deal nào trong team.</p>
         }
     </div>
 
@@ -230,6 +246,11 @@
             border-radius: .75rem
         }
 
+        /* Thêm lớp CSS cho hàng quá hạn */
+        .table-danger-custom {
+            background-color: rgba(220,53,69,0.08) !important; /* Đỏ nhạt hơn */
+        }
+
         .table-hover tbody tr:hover {
             background-color: #f8f9fa
         }
@@ -240,7 +261,7 @@
             justify-content: space-between;
             padding: .6rem 1rem;
             color: #fff;
-            border-radius: .5rem;
+            border-radius: 0; /* Loại bỏ border-radius cũ */
             font-weight: 700;
             line-height: 1.2;
             box-shadow: 0 3px 12px rgba(0,0,0,.08);

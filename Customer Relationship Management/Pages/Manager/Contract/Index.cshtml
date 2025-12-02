@@ -16,18 +16,21 @@
 
     <form method="get" class="card glass-card border-0 shadow-sm mb-4">
         <input type="hidden" name="status" value="@Model.CurrentStatus" />
+
         <div class="card-body row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Từ ngày</label>
                 <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
             </div>
             <div class="col-md-3">
+
                 <label class="form-label fw-semibold">Đến ngày</label>
                 <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control shadow-sm" />
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-semibold">Tìm kiếm</label>
-                <input type="text" name="Keyword" value="@Model.Keyword" placeholder="Tên deal, người tạo hoặc nội dung hợp đồng..." class="form-control shadow-sm" />
+                <input type="text" name="Keyword" value="@Model.Keyword" placeholder="Tên deal, người tạo hoặc nội dung
+hợp đồng..." class="form-control shadow-sm" />
             </div>
             <div class="col-12 d-flex justify-content-end">
                 <button type="submit" class="btn btn-gradient-mgr px-4">Lọc</button>
@@ -35,6 +38,7 @@
             </div>
         </div>
     </form>
+
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -47,76 +51,109 @@
 
     @if (Model.Contracts.Any())
     {
-        <div class="table-responsive card table-card p-3">
+        <div class="card border-0 shadow-sm overflow-hidden mb-4" style="border-radius: 12px;">
 
-            <!-- Dải tiêu đề bảng: gradient xanh lá giống heading Manager -->
-            <div class="table-title-band table-title-band-mgr mb-2">
+            <div class="table-title-band table-title-band-mgr p-3">
                 <div class="fw-semibold">Danh sách hợp đồng</div>
                 <small class="opacity-75">Theo dõi tiến độ duyệt và thanh toán</small>
             </div>
 
-            <table class="table table-hover align-middle text-dark bg-white" id="contractsTable">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Deal</th>
-                        <th>Người tạo</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày tạo</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var contract in Model.Contracts)
-                    {
-                        <tr>
-                            <td>@contract.ContractID</td>
-                            <td>@contract.Deal?.DealName</td>
-                            <td>@contract.CreatedBy?.FullName</td>
-                            <td>@contract.ApprovalStatus</td>
-                            <td>@contract.CreatedAt.ToString("dd/MM/yyyy")</td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-info"
-                                   asp-page="./Index"
-                                   asp-route-status="@Model.CurrentStatus"
-                                   asp-route-id="@contract.ContractID">
-                                    Xem
-                                </a>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
 
-                                @if (Model.CurrentStatus == "Pending")
-                                {
-                                    <form method="post" asp-page-handler="Approve" style="display:inline">
-                                        <input type="hidden" name="id" value="@contract.ContractID" />
-                                        <input type="hidden" name="status" value="@Model.CurrentStatus" />
-                                        <input type="hidden" name="selectedId" value="@contract.ContractID" />
-                                        <button type="button"
-                                                class="btn btn-sm btn-success js-confirm"
-                                                data-title="Phê duyệt hợp đồng?"
-                                                data-text="Bạn chắc chắn muốn phê duyệt hợp đồng #@contract.ContractID?"
-                                                data-icon="question"
-                                                data-confirm="#198754">
-                                            Duyệt
-                                        </button>
-                                    </form>
-                                    <form method="post" asp-page-handler="Reject" style="display:inline">
-                                        <input type="hidden" name="id" value="@contract.ContractID" />
-                                        <input type="hidden" name="status" value="@Model.CurrentStatus" />
-                                        <input type="hidden" name="selectedId" value="@contract.ContractID" />
-                                        <button type="button"
-                                                class="btn btn-sm btn-danger js-confirm"
-                                                data-title="Từ chối hợp đồng?"
-                                                data-text="Bạn chắc chắn muốn từ chối hợp đồng #@contract.ContractID?"
-                                                data-icon="warning"
-                                                data-confirm="#dc3545">
-                                            Từ chối
-                                        </button>
-                                    </form>
-                                }
-                            </td>
+                        <tr>
+                            <th>ID</th>
+                            <th>Deal</th>
+                            <th>Người tạo</th>
+
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th style="width: 240px;">Thao tác</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+
+                    </thead>
+                    <tbody>
+                        @foreach (var contract in Model.Contracts)
+                        {
+                            // Logic nhấn mạnh trạng thái
+                            string rowClass = contract.ApprovalStatus switch
+                            {
+                                "Rejected" => "table-rejected", // Màu đỏ nhạt
+                                "Pending" => "table-pending",   // Màu vàng nhạt
+                                _ => ""
+                            };
+
+                            <tr class="@rowClass">
+
+                                <td>@contract.ContractID</td>
+                                <td class="fw-semibold">@contract.Deal?.DealName</td>
+                                <td>@contract.CreatedBy?.FullName</td>
+                                <td>
+                                    @{
+                                        string badgeClass = contract.ApprovalStatus switch
+                                        {
+                                            "Approved" => "bg-success",
+                                            "Rejected" => "bg-danger",
+                                            "Pending" => "bg-warning text-dark",
+                                            _ => "bg-secondary"
+                                        };
+                                        <span class="badge @badgeClass bg-opacity-75">@contract.ApprovalStatus</span>
+                                    }
+                                </td>
+                                <td>@contract.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-info"
+                                       asp-page="./Index"
+                                       asp-route-status="@Model.CurrentStatus"
+                                       asp-route-id="@contract.ContractID">
+
+                                        Xem
+                                    </a>
+
+                                    @if (Model.CurrentStatus == "Pending")
+
+                                    {
+                                        <form method="post" asp-page-handler="Approve" style="display:inline">
+
+                                            <input type="hidden" name="id" value="@contract.ContractID" />
+                                            <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                            <input type="hidden" name="selectedId" value="@contract.ContractID" />
+                                            <button type="button"
+                                                    class="btn btn-sm btn-success js-confirm"
+                                                    data-title="Phê duyệt hợp đồng?"
+                                                    data-text="Bạn chắc chắn muốn phê duyệt hợp đồng #@contract.ContractID?"
+                                                    data-icon="question"
+                                                    data-confirm="#198754">
+
+                                                Duyệt
+                                            </button>
+                                        </form>
+
+                                        <form method="post" asp-page-handler="Reject" style="display:inline">
+                                            <input type="hidden" name="id" value="@contract.ContractID" />
+
+                                            <input type="hidden" name="status" value="@Model.CurrentStatus" />
+                                            <input type="hidden" name="selectedId" value="@contract.ContractID" />
+                                            <button type="button"
+                                                    class="btn btn-sm btn-danger js-confirm"
+                                                    data-title="Từ chối hợp đồng?"
+                                                    data-text="Bạn chắc chắn muốn từ chối hợp đồng #@contract.ContractID?"
+                                                    data-icon="warning"
+                                                    data-confirm="#dc3545">
+
+                                                Từ chối
+                                            </button>
+                                        </form>
+
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
         </div>
     }
     else
@@ -125,7 +162,6 @@
     }
 </div>
 
-<!-- Modal Chi tiết giữ nguyên... -->
 @section Styles {
     <style>
         .btn-gradient-mgr {
@@ -153,19 +189,20 @@
             color: #212529
         }
 
-        .table-card {
-            background: #fff;
-            border-radius: .75rem
-        }
+        /* Loại bỏ .table-card cũ và dùng CSS cho Card mới */
+        /* .table-card {
+                    background: #fff;
+                    border-radius: .75rem
+                } */
 
         /* Dải tiêu đề bảng – cùng gradient với heading/nút Manager */
         .table-title-band {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: .6rem 1rem;
+            padding: 1rem; /* Tăng padding để Header Card đẹp hơn */
             color: #fff;
-            border-radius: .5rem;
+            border-radius: 0; /* Loại bỏ border-radius cũ để góc bo theo Card cha */
             font-weight: 700;
             line-height: 1.2;
             box-shadow: 0 3px 12px rgba(0,0,0,.08);
@@ -180,6 +217,19 @@
             background: #fff;
             color: #212529
         }
+
+        /* Thêm các lớp nhấn mạnh trạng thái cho hàng */
+        .table-rejected {
+            background-color: rgba(220,53,69,0.08) !important; /* Đỏ nhạt */
+        }
+
+        .table-pending {
+            background-color: rgba(255,193,7,0.1) !important; /* Vàng nhạt */
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa; /* Đảm bảo hover vẫn hoạt động trên nền màu */
+        }
     </style>
 }
 
@@ -190,10 +240,10 @@
             const hasDetails = '@(Model.SelectedContract != null ? "true" : "false")' === 'true';
             if (hasDetails) {
                 const modalEl = document.getElementById('detailsModal');
+
                 bootstrap.Modal.getOrCreateInstance(modalEl).show();
             }
         });
-
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('.js-confirm');
             if (!btn) return;
@@ -201,12 +251,14 @@
             const form = btn.closest('form');
             Swal.fire({
                 title: btn.dataset.title || 'Xác nhận?',
+
                 text: btn.dataset.text || 'Bạn chắc chắn?',
                 icon: btn.dataset.icon || 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Xác nhận',
                 cancelButtonText: 'Hủy',
-                confirmButtonColor: btn.dataset.confirm || '#198754',
+                confirmButtonColor:
+                btn.dataset.confirm || '#198754',
                 cancelButtonColor: '#6c757d'
             }).then(r => { if (r.isConfirmed) form.submit(); });
         });

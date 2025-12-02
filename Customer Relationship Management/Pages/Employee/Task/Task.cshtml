@@ -2,83 +2,27 @@
 @model Customer_Relationship_Management.Pages.Employee.Task.TaskModel
 @{
     Layout = "/Pages/Shared/_LayoutEmployee.cshtml";
-    ViewData["Title"] = "Tasks";
+    ViewData["Title"] = "Công việc được giao cho tôi";
     ViewData["ActiveMenu"] = "Task";
 }
 
-<div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
-
+<div class="container-fluid py-4 px-3">
     @if (TempData["SuccessMessage"] is string sm)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @sm
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">@sm<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
     }
     @if (TempData["ErrorMessage"] is string em)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @em
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["InfoMessage"] is string im)
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @im
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">@em<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
     }
 
     <div class="mb-4">
-        <h2 class="fw-bold text-gradient mb-0">Danh sách công việc & lịch hẹn (nhắc sắp đến hạn)</h2>
-        <p class="text-muted mb-0 small">Theo dõi công việc hằng ngày, nhắc nhở và các cuộc hẹn quan trọng</p>
-    </div>
-
-    <!-- Thêm Task mới (Status ẩn – luôn Pending) -->
-    <div id="addTaskSection" class="card glass-card border-0 shadow-sm mb-4">
-        <div class="card-header bg-gradient-blue text-white d-flex align-items-center">
-            <h5 class="mb-0">Thêm công việc / lịch hẹn</h5>
-        </div>
-        <div class="card-body">
-            <form id="addTaskForm" method="post" asp-page-handler="Add" class="row g-3">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                <div class="col-md-6">
-                    <label asp-for="AddTask.Title" class="form-label fw-semibold">Tiêu đề</label>
-                    <input asp-for="AddTask.Title" class="form-control" maxlength="200" placeholder="Nhập nội dung công việc..." />
-                    <span asp-validation-for="AddTask.Title" class="text-danger"></span>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Trạng thái</label>
-                    <input class="form-control" value="Pending" disabled />
-                </div>
-
-                <div class="col-12">
-                    <label asp-for="AddTask.Description" class="form-label fw-semibold">Mô tả</label>
-                    <textarea asp-for="AddTask.Description" class="form-control" rows="2" placeholder="Ghi chú chi tiết..."></textarea>
-                </div>
-
-                <div class="col-md-6">
-                    <label asp-for="AddTask.DueDate" class="form-label fw-semibold">Ngày giờ thực hiện</label>
-                    <input asp-for="AddTask.DueDate" type="datetime-local" class="form-control" />
-                </div>
-
-                <div class="col-md-6">
-                    <label asp-for="AddTask.ReminderAt" class="form-label fw-semibold">Nhắc tại</label>
-                    <input asp-for="AddTask.ReminderAt" type="datetime-local" class="form-control" />
-                </div>
-
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-gradient px-4">Thêm Task</button>
-                </div>
-            </form>
-        </div>
+        <h2 class="fw-bold text-gradient mb-0">Công việc được giao cho tôi</h2>
+        <p class="text-muted mb-0 small">Theo dõi công việc, xem chi tiết và hoàn thành</p>
     </div>
 
     <!-- Bộ lọc -->
-    <form method="get" class="card glass-card border-0 shadow-sm mb-4">
+    <form method="get" class="card glass-card border-0 shadow-sm mb-3">
         <div class="card-body row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label fw-semibold">Từ khóa</label>
@@ -108,11 +52,11 @@
         </div>
     </form>
 
-    <!-- Danh sách -->
+    <!-- Danh sách công việc - chỉ một bảng, đẹp -->
     <div class="card border-0 shadow-lg glass-card">
         <div class="card-header bg-gradient-blue text-white d-flex align-items-center justify-content-between">
-            <h5 class="mb-0 fw-semibold">Danh sách công việc & lịch hẹn</h5>
-            <span class="small opacity-75">Giữ nhịp công việc đều đặn để đạt mục tiêu</span>
+            <h5 class="mb-0 fw-semibold">Danh sách công việc</h5>
+            <span class="small opacity-75">Nhấn "Xem" để xem chi tiết và hoàn thành</span>
         </div>
         <div class="table-responsive">
             <table class="table align-middle table-hover mb-0">
@@ -122,7 +66,7 @@
                         <th>Hạn</th>
                         <th>Nhắc tại</th>
                         <th>Trạng thái</th>
-                        <th class="text-center actions-header">Thao tác</th>
+                        <th class="text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,25 +77,48 @@
                             var badgeClass = t.Status?.ToLower() == "done"
                             ? "success"
                             : (t.Status?.ToLower() == "in-progress" ? "warning text-dark" : "secondary");
-                            <tr>
+                            var isOverdue = t.DueDate != null && t.DueDate < DateTime.UtcNow && t.Status != "Done";
+                            <tr class="@(isOverdue ? "table-danger" : "")">
                                 <td class="fw-semibold">@t.Title</td>
-                                <td>@(t.DueDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                                <td>
+                                    @if (t.DueDate.HasValue)
+                                    {
+                                        @t.DueDate.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        @if (isOverdue)
+                                        {
+                                            <span class="badge bg-danger ms-1">QUÁ HẠN</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
                                 <td>@(t.ReminderAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                                 <td><span class="badge bg-@badgeClass">@t.Status</span></td>
-                                <td class="text-center actions-cell">
+                                <td class="text-center">
                                     <div class="d-flex justify-content-center gap-2 w-100">
                                         <button class="btn btn-sm btn-outline-primary btn-view"
                                                 data-detail-url="@Url.Page("./Task", null, new { handler = "TaskDetail", id = t.TaskID }, null)">
                                             Xem
                                         </button>
-                                        <button class="btn btn-sm btn-outline-warning btn-edit"
-                                                data-detail-url="@Url.Page("./Task", null, new { handler = "TaskDetail", id = t.TaskID }, null)">
-                                            Sửa
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-delete"
-                                                data-id="@t.TaskID" data-title="@t.Title">
-                                            Xóa
-                                        </button>
+                                        @if (t.Status == "Pending")
+                                        {
+                                            <form method="post" asp-page-handler="Confirm" asp-route-id="@t.TaskID" class="d-inline">
+                                                <button class="btn btn-sm btn-outline-warning" type="submit">Xác nhận</button>
+                                            </form>
+                                        }
+                                        @if (t.Status == "In-Progress")
+                                        {
+                                            <button class="btn btn-sm btn-outline-success btn-complete"
+                                                    data-id="@t.TaskID" data-title="@t.Title">
+                                                Hoàn thành
+                                            </button>
+                                        }
+                                        @if (t.Status == "Done")
+                                        {
+                                            <span class="badge bg-success py-2 px-3">✓ Hoàn thành</span>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -176,104 +143,29 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="taskDetailContent" class="p-2 text-start text-muted">Đang tải...</div>
+                <div id="taskDetailContent" class="p-2 text-start">Đang tải... </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Sửa (không có Status) -->
-<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg glass-card">
-            <div class="modal-header bg-gradient-blue text-white">
-                <h5 class="modal-title fw-bold">Chỉnh sửa công việc</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editTaskForm" method="post" asp-page-handler="Edit" class="row g-3">
-                    <input type="hidden" asp-for="EditTask.TaskID" />
-                    <div class="col-md-6">
-                        <label asp-for="EditTask.Title" class="form-label fw-semibold">Tiêu đề</label>
-                        <input asp-for="EditTask.Title" class="form-control" />
-                        <span asp-validation-for="EditTask.Title" class="text-danger"></span>
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="EditTask.Description" class="form-label fw-semibold">Mô tả</label>
-                        <textarea asp-for="EditTask.Description" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EditTask.DueDate" class="form-label fw-semibold">Ngày giờ thực hiện</label>
-                        <input asp-for="EditTask.DueDate" type="datetime-local" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="EditTask.ReminderAt" class="form-label fw-semibold">Nhắc tại</label>
-                        <input asp-for="EditTask.ReminderAt" type="datetime-local" class="form-control" />
-                    </div>
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-warning px-4" id="btnEditTask">Cập nhật</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal xác nhận Thêm -->
-<div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
+<!-- Modal xác nhận Hoàn thành -->
+<div class="modal fade" id="completeConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg glass-card">
             <div class="modal-header bg-gradient-blue text-white">
-                <h5 class="modal-title">Xác nhận thêm công việc</h5>
+                <h5 class="modal-title">Xác nhận hoàn thành</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="confirmAddContent" class="text-start"></div>
+                <p>Bạn có chắc chắn muốn hoàn thành công việc: <strong id="completeTaskTitle"></strong>?</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button class="btn btn-gradient" id="confirmAddBtn">Xác nhận</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal xác nhận Sửa -->
-<div class="modal fade" id="confirmEditModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg glass-card">
-            <div class="modal-header bg-gradient-blue text-white">
-                <h5 class="modal-title">Xác nhận cập nhật công việc</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="confirmEditContent" class="text-start"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button class="btn btn-gradient" id="confirmEditBtn">Xác nhận</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal xác nhận Xóa -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg glass-card">
-            <div class="modal-header bg-gradient-blue text-white">
-                <h5 class="modal-title">Xác nhận xóa công việc</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Bạn có chắc chắn muốn xóa công việc: <strong id="deleteTaskTitle"></strong>?</p>
-            </div>
-            <div class="modal-footer">
-                <form id="deleteForm" method="post" asp-page-handler="Delete" class="d-none">
-                    <input type="hidden" name="id" id="deleteTaskId" />
+                <form id="completeForm" method="post" asp-page-handler="Complete" class="d-none">
+                    <input type="hidden" name="id" id="completeTaskId" />
                 </form>
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
+                <button class="btn btn-success" id="confirmCompleteBtn">Hoàn thành</button>
             </div>
         </div>
     </div>
@@ -282,60 +174,61 @@
 @section Styles {
     <style>
         .btn-gradient {
-            background: linear-gradient(45deg,#007bff,#00d4ff);
+            background: linear-gradient(45deg, #007bff, #00d4ff);
             color: #fff;
             border: none;
-            transition: .3s
+            transition: 0.3s;
         }
 
             .btn-gradient:hover {
                 transform: scale(1.05);
-                opacity: .9
+                opacity: 0.9;
             }
 
         .text-gradient {
-            background: linear-gradient(90deg,#007bff,#00c6ff);
+            background: linear-gradient(90deg, #007bff, #00c6ff);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent
+            -webkit-text-fill-color: transparent;
         }
 
         .glass-card {
             backdrop-filter: blur(10px);
-            background: rgba(255,255,255,.9);
+            background: rgba(255,255,255,0.96);
             border-radius: 14px;
-            color: #212529
+            color: #212529;
         }
 
         .bg-gradient-blue {
-            background: linear-gradient(45deg,#007bff,#00b4ff)
+            background: linear-gradient(45deg, #007bff, #00b4ff);
         }
 
-        .actions-header, .actions-cell {
-            text-align: center !important;
-            vertical-align: middle;
-            white-space: nowrap;
+        .table-danger {
+            background-color: rgba(220,53,69,0.08);
         }
 
-            .actions-cell .d-flex {
-                min-width: 140px;
-            }
+        .badge {
+            font-size: 0.97em;
+        }
 
-            .actions-cell .btn {
-                min-width: 46px;
-                padding: 4px 10px;
-            }
+        .btn-outline-warning {
+            border-color: #ffc107 !important;
+            color: #314530 !important;
+        }
+
+        .btn-outline-success {
+            border-color: #198754 !important;
+            color: #198754 !important;
+        }
     </style>
 }
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
-        const $ = (s, r=document)=>r.querySelector(s);
+        const $ = (s, r = document) => r.querySelector(s);
 
         document.addEventListener('click', async (e) => {
             const viewBtn = e.target.closest('.btn-view');
-            const editBtn = e.target.closest('.btn-edit');
-            const deleteBtn = e.target.closest('.btn-delete');
+            const completeBtn = e.target.closest('.btn-complete');
 
             if (viewBtn) {
                 const url = viewBtn.getAttribute('data-detail-url');
@@ -345,20 +238,21 @@
                     const res = await fetch(url, { credentials: 'include' });
                     const data = await res.json();
                     if (!data) { $('#taskDetailContent').innerHTML = '<div class="text-danger">Không tải được dữ liệu.</div>'; return; }
+                    const now = new Date();
+                    const isOverdue = data.dueDate && new Date(data.dueDate) < now && data.status !== 'Done';
                     $('#taskDetailContent').innerHTML = `
                         <div class="row g-3 text-start">
                             <div class="col-md-6">
-                                <p><strong>Tiêu đề:</strong> ${data.title || ''}</p>
-                                <p><strong>Trạng thái:</strong> ${data.status || 'Pending'}</p>
-                                <p><strong>Ngày giờ thực hiện:</strong> ${data.dueDate ? new Date(data.dueDate).toLocaleString() : '—'}</p>
+                                <p><strong>Tiêu đề:</strong> ${esc(data.title || '')}</p>
+                                <p><strong>Trạng thái:</strong> <span class="badge bg-${data.status?.toLowerCase() === 'done' ? 'success' : data.status?.toLowerCase() === 'in-progress' ? 'warning' : 'secondary'}">${data.status || 'Pending'}</span></p>
+                                ${isOverdue ? '<p><span class="badge bg-danger">QUÁ HẠN</span></p>' : ''}
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Nhắc tại:</strong> ${data.reminderAt ? new Date(data.reminderAt).toLocaleString() : '—'}</p>
-                                <p><strong>Tạo lúc:</strong> ${data.createdAt ? new Date(data.createdAt).toLocaleString() : '—'}</p>
-                                <p><strong>Cập nhật:</strong> ${data.updatedAt ? new Date(data.updatedAt).toLocaleString() : '—'}</p>
+                                <p><strong>Ngày giờ thực hiện:</strong> ${data.dueDate ? new Date(data.dueDate).toLocaleString('vi-VN') : '—'}</p>
+                                <p><strong>Nhắc tại:</strong> ${data.reminderAt ? new Date(data.reminderAt).toLocaleString('vi-VN') : '—'}</p>
                             </div>
                             <div class="col-12">
-                                <p><strong>Mô tả:</strong> ${data.description || 'Không có'}</p>
+                                <p><strong>Mô tả:</strong><br/>${esc(data.description || 'Không có')}</p>
                             </div>
                         </div>`;
                 } catch {
@@ -367,67 +261,24 @@
                 return;
             }
 
-            if (editBtn) {
-                const url = editBtn.getAttribute('data-detail-url');
-                try {
-                    const res = await fetch(url, { credentials: 'include' });
-                    const data = await res.json();
-                    if (!data) { alert('Không tải được dữ liệu để chỉnh sửa.'); return; }
-                    $('#editTaskForm input[name="EditTask.TaskID"]').value = data.taskID;
-                    $('#editTaskForm input[name="EditTask.Title"]').value = data.title || '';
-                    $('#editTaskForm textarea[name="EditTask.Description"]').value = data.description || '';
-                    $('#editTaskForm input[name="EditTask.DueDate"]').value = data.dueDate ? new Date(data.dueDate).toISOString().slice(0,16) : '';
-                    $('#editTaskForm input[name="EditTask.ReminderAt"]').value = data.reminderAt ? new Date(data.reminderAt).toISOString().slice(0,16) : '';
-                    new bootstrap.Modal(document.getElementById('editTaskModal')).show();
-                } catch {
-                    alert('Lỗi khi tải dữ liệu để chỉnh sửa.');
-                }
-                return;
-            }
-
-            if (deleteBtn) {
-                const id = deleteBtn.getAttribute('data-id');
-                const title = deleteBtn.getAttribute('data-title');
-                $('#deleteTaskId').value = id;
-                $('#deleteTaskTitle').textContent = title || '';
-                new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+            if (completeBtn) {
+                const id = completeBtn.getAttribute('data-id');
+                const title = completeBtn.getAttribute('data-title');
+                $('#completeTaskId').value = id;
+                $('#completeTaskTitle').textContent = title || '';
+                new bootstrap.Modal(document.getElementById('completeConfirmModal')).show();
                 return;
             }
         });
 
-        $('#confirmDeleteBtn')?.addEventListener('click', () => $('#deleteForm').submit());
-
-        const addForm = document.getElementById('addTaskForm');
-        const addConfirmModal = new bootstrap.Modal(document.getElementById('confirmAddModal'));
-        let bypassAdd = false;
-        addForm?.addEventListener('submit', (e) => {
-            if (bypassAdd) { bypassAdd = false; return; }
-            e.preventDefault();
-            const gv = n => addForm.querySelector(`[name="${n}"]`)?.value || '';
-            document.getElementById('confirmAddContent').innerHTML = `
-                <p><strong>Tiêu đề:</strong> ${gv('AddTask.Title')}</p>
-                <p><strong>Trạng thái:</strong> Pending</p>
-                <p><strong>Hạn:</strong> ${gv('AddTask.DueDate') || '—'}</p>
-                <p><strong>Nhắc tại:</strong> ${gv('AddTask.ReminderAt') || '—'}</p>
-                <p><strong>Mô tả:</strong> ${gv('AddTask.Description') || 'Không có'}</p>`;
-            addConfirmModal.show();
+        document.getElementById('confirmCompleteBtn')?.addEventListener('click', () => {
+            document.getElementById('completeForm').submit();
         });
-        document.getElementById('confirmAddBtn')?.addEventListener('click', () => { addConfirmModal.hide(); bypassAdd = true; addForm.requestSubmit(); });
 
-        const editForm = document.getElementById('editTaskForm');
-        const editConfirmModal = new bootstrap.Modal(document.getElementById('confirmEditModal'));
-        let bypassEdit = false;
-        editForm?.addEventListener('submit', (e) => {
-            if (bypassEdit) { bypassEdit = false; return; }
-            e.preventDefault();
-            const gv = n => editForm.querySelector(`[name="${n}"]`)?.value || '';
-            document.getElementById('confirmEditContent').innerHTML = `
-                <p><strong>Tiêu đề:</strong> ${gv('EditTask.Title')}</p>
-                <p><strong>Hạn:</strong> ${gv('EditTask.DueDate') || '—'}</p>
-                <p><strong>Nhắc tại:</strong> ${gv('EditTask.ReminderAt') || '—'}</p>
-                <p><strong>Mô tả:</strong> ${gv('EditTask.Description') || 'Không có'}</p>`;
-            editConfirmModal.show();
-        });
-        document.getElementById('confirmEditBtn')?.addEventListener('click', () => { editConfirmModal.hide(); bypassEdit = true; editForm.requestSubmit(); });
+        function esc(str) {
+            return (str || '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
     </script>
 }

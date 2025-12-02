@@ -115,7 +115,7 @@
         <!-- Sidebar -->
         <aside class="manager-sidebar p-3">
             <nav class="nav flex-column">
-                <a class="nav-link @(currentPath.StartsWith("/Manager/Index") || currentPath.Equals("/Manager") ? "active" : "")" asp-page="/Manager/Index">
+                <a class="nav-link @(currentPath.StartsWith("/Manager/Dashboard") || currentPath.Equals("/Manager/") || currentPath.Equals("/Manager/Index") || currentPath.Equals("/Manager") ? "active" : "")" asp-page="/Manager/Dashboard">
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
                 <a class="nav-link @(currentPath.StartsWith("/Manager/Customer") ? "active" : "")" asp-page="/Manager/Customer/Index">

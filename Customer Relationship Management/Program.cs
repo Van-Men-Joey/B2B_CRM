@@ -85,6 +85,7 @@ namespace Customer_Relationship_Management
             builder.Services.AddScoped<IDealService, DealService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
             builder.Services.AddScoped<IBackupService, BackupService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             ////chạy trên máy khác
             //builder.WebHost.UseUrls("http://localhost:5197", "http://172.16.71.57:5197");
