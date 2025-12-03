@@ -1,63 +1,349 @@
 ﻿@page
 @model Customer_Relationship_Management.Pages.Admin.DashboardModel
 @{
-    ViewData["Title"] = "Bảng điều khiển";
+    ViewData["Title"] = "Bảng điều khiển quản trị";
     Layout = "~/Pages/Shared/_LayoutAdmin.cshtml";
     ViewData["ActiveMenu"] = "Dashboard";
 }
 
-<div class="container-fluid">
-    <h2 class="mb-4"><i class="bi bi-speedometer2 text-primary"></i> Bảng điều khiển hệ thống</h2>
+<style>
+    /* 1. Style đồng bộ từ các trang trước */
+    .admin-gradient-heading {
+        background: linear-gradient(90deg, #2f3542 0%, #58606c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+    }
 
-    <div class="row g-3">
+    .table-card-admin {
+        background: #fff;
+        border-radius: .75rem;
+        box-shadow: 0 1px 8px rgba(44,62,80,0.07);
+        border: 1px solid #e3e3e3;
+    }
+
+    .admin-table-striped tbody tr:nth-child(odd) {
+        background-color: #f5f7fa !important;
+    }
+
+    .btn-admin-outline {
+        background: transparent;
+        color: #58606c !important;
+        border: 1px solid #dee2e6;
+        transition: .3s;
+        font-size: 0.875rem;
+    }
+
+        .btn-admin-outline:hover {
+            background: #58606c;
+            color: #fff !important;
+            border-color: #58606c;
+        }
+
+    /* 2. Style riêng cho Dashboard Cards (Hiệu ứng nổi) */
+    .dashboard-stat-card {
+        background: #fff;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .dashboard-stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+    /* Thanh màu bên trái card */
+    .border-left-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(180deg, #1cc88a 0%, #13855c 100%);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(180deg, #f6c23e 0%, #dda20a 100%);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(180deg, #36b9cc 0%, #258391 100%);
+    }
+
+    .stat-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #858796;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #5a5c69;
+        margin-bottom: 0;
+    }
+</style>
+
+<div class="container-fluid px-3 py-4 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="admin-gradient-heading mb-0">Dashboard Tổng quan</h2>
+            <p class="text-muted mb-0 small">Tổng hợp số liệu kinh doanh và giám sát hệ thống</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-light text-secondary border">
+                <i class="bi bi-clock me-1"></i> Cập nhật: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="text-muted">Tổng số người dùng</h6>
-                    <h3>4,812</h3>
-                    <small class="text-success"><i class="bi bi-arrow-up"></i> +3% so với tháng trước</small>
+            <div class="dashboard-stat-card p-3">
+                <div class="border-left-indicator bg-gradient-primary"></div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="stat-title text-primary">Tổng Người dùng</div>
+                        <div class="stat-value">@Model.TotalUsers</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Nhân viên & Quản lý</small>
+                    </div>
+                    <div class="text-gray-300">
+                        <i class="bi bi-people-fill fa-2x text-gray-300" style="font-size: 2rem; opacity: 0.1"></i>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="text-muted">Cảnh báo bảo mật</h6>
-                    <h3>3</h3>
-                    <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> Cần xử lý</small>
+            <div class="dashboard-stat-card p-3">
+                <div class="border-left-indicator bg-gradient-success"></div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="stat-title text-success">Tổng Khách hàng</div>
+                        <div class="stat-value">@Model.TotalCustomers</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Đang quản lý</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-person-check-fill" style="font-size: 2rem; opacity: 0.1; color: #1cc88a"></i>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="text-muted">Lần sao lưu gần nhất</h6>
-                    <h3>2 giờ trước</h3>
-                    <small class="text-secondary">Tự động hàng ngày</small>
+            <div class="dashboard-stat-card p-3">
+                <div class="border-left-indicator bg-gradient-warning"></div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="stat-title text-warning">Cơ hội kinh doanh</div>
+                        <div class="stat-value">@Model.TotalDeals</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Deals trong hệ thống</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-briefcase-fill" style="font-size: 2rem; opacity: 0.1; color: #f6c23e"></i>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="text-muted">Trạng thái hệ thống</h6>
-                    <h3 class="text-success">Ổn định</h3>
-                    <small class="text-secondary">Không có sự cố</small>
+            <div class="dashboard-stat-card p-3">
+                <div class="border-left-indicator bg-gradient-info"></div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="stat-title text-info">Trạng thái hệ thống</div>
+                        <div class="stat-value" style="font-size: 1.5rem;">Ổn định</div>
+                        <small class="text-success fw-bold" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill"></i> Server Good</small>
+                    </div>
+                    <div>
+                        <i class="bi bi-hdd-network-fill" style="font-size: 2rem; opacity: 0.1; color: #36b9cc"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <h5 class="mb-3"><i class="bi bi-activity text-primary"></i> Hoạt động gần đây</h5>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">Người dùng <b>manager01</b> thay đổi mật khẩu (2 phút trước)</li>
-                    <li class="list-group-item">Hệ thống sao lưu tự động hoàn tất (30 phút trước)</li>
-                    <li class="list-group-item">Cảnh báo bảo mật mới: Truy cập lạ từ IP 203.162.* (1 giờ trước)</li>
-                </ul>
+    <div class="row g-3 mb-4">
+        <div class="col-md-8">
+            <div class="table-card-admin h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-primary"><i class="bi bi-bar-chart-line-fill me-2"></i>Phân bổ trạng thái Deals</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="dealsChart" style="max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="table-card-admin h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="m-0 fw-bold text-success"><i class="bi bi-pie-chart-fill me-2"></i>Top ngành hàng</h6>
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <canvas id="customerChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card-admin">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <h6 class="m-0 fw-bold text-danger"><i class="bi bi-activity me-2"></i>Nhật ký hoạt động gần đây</h6>
+            <a href="/Admin/AuditLogs" class="btn btn-admin-outline py-1 px-3 rounded-pill">
+                Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table admin-table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Thời gian</th>
+                            <th>Người thực hiện</th>
+                            <th>Hành động</th>
+                            <th>Đối tượng</th>
+                            <th class="text-end pe-4">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RecentActivities != null && Model.RecentActivities.Any())
+                        {
+                            foreach (var log in Model.RecentActivities)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-muted small">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="fw-bold" style="color: #2f3542;">User ID: @log.UserID</div>
+                                    </td>
+                                    <td>
+                                        @if (log.Action.ToString() == "Create")
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1">Thêm mới</span>
+                                        }
+                                        else if (log.Action.ToString() == "Update")
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1">Cập nhật</span>
+                                        }
+                                        else if (log.Action.ToString() == "Delete")
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1">Xóa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2 py-1">@log.Action</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold">@log.TableName</span>
+                                        <span class="text-muted small ms-1">(#@log.RecordID)</span>
+                                    </td>
+                                    <td class="text-end pe-4 text-muted small font-monospace">@log.IPAddress</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>
+                                    Chưa có hoạt động nào được ghi nhận.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Font family mặc định cho ChartJS để đồng bộ với web
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        Chart.defaults.color = '#858796';
+
+        // --- 1. Biểu đồ Deals (Bar Chart) ---
+        var dealCtx = document.getElementById('dealsChart').getContext('2d');
+        var dealLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DealStageLabels));
+        var dealValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DealStageValues));
+
+        new Chart(dealCtx, {
+            type: 'bar',
+            data: {
+                labels: dealLabels,
+                datasets: [{
+                    label: 'Số lượng Deals',
+                    data: dealValues,
+                    backgroundColor: '#4e73df',
+                    hoverBackgroundColor: '#2e59d9',
+                    borderColor: '#4e73df',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false, drawBorder: false }, ticks: { color: '#58606c' } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [2], drawBorder: false, color: "#eaecf4" },
+                        ticks: { precision: 0, padding: 10, color: '#58606c' }
+                    }
+                }
+            }
+        });
+
+        // --- 2. Biểu đồ Customers (Doughnut Chart) ---
+        var customerCtx = document.getElementById('customerChart').getContext('2d');
+        var custLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CustomerIndustryLabels));
+        var custValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CustomerIndustryValues));
+
+        new Chart(customerCtx, {
+            type: 'doughnut',
+            data: {
+                labels: custLabels,
+                datasets: [{
+                    data: custValues,
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+                    hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617', '#717384'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+    });
+</script>

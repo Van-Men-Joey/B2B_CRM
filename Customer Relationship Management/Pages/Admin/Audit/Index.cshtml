@@ -5,7 +5,9 @@
     ViewData["ActiveMenu"] = "Audit";
     Layout = "/Pages/Shared/_LayoutAdmin.cshtml";
 }
+
 <style>
+    /* 1. Các Style gốc từ ManageUser/BackupRestore để đồng nhất */
     .admin-gradient-heading {
         background: linear-gradient(90deg, #2f3542 0%, #58606c 100%);
         -webkit-background-clip: text;
@@ -19,8 +21,8 @@
         backdrop-filter: blur(8px);
         background: rgba(47, 53, 66, 0.07);
         border-radius: 14px;
-        color: #212529;
-        border: 1px solid #e3e3e3;
+        padding: 0;
+        border: 1px solid #eee;
         box-shadow: 0 1px 8px rgba(44,62,80,0.07);
     }
 
@@ -30,131 +32,169 @@
         border: none;
         transition: .3s;
         font-weight: 600;
+        box-shadow: 0 4px 6px rgba(47, 53, 66, 0.2);
     }
 
         .btn-admin-gradient:hover {
-            opacity: .9;
+            opacity: .95;
             transform: translateY(-1px);
+            box-shadow: 0 6px 8px rgba(47, 53, 66, 0.3);
         }
 
-    .form-label, .audit-label {
+    .form-label {
         font-weight: 600;
         color: #58606c !important;
     }
 
-    .audit-radio-icon {
-        font-size: 1.3rem;
-        margin-right: 0.25rem;
+    /* 2. Style riêng cho các thẻ chọn Log (Selection Cards) */
+    .audit-option-card {
+        background: #fff;
+        border: 1px solid #e3e3e3;
+        border-radius: 10px;
+        padding: 1rem;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        position: relative;
+        height: 100%;
+    }
+
+        .audit-option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: #b0b8c1;
+        }
+
+    /* Khi radio được check, đổi màu viền card */
+    .form-check-input:checked ~ .audit-card-content {
+        color: #2f3542;
+    }
+
+    /* Ẩn radio mặc định đi hoặc để nhỏ gọn, ở đây ta tùy biến */
+    .custom-radio-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .audit-icon {
+        font-size: 1.5rem;
         color: #58606c;
-        vertical-align: middle;
-    }
-
-    .audit-list-group .list-group-item {
-        background: rgba(245,247,250,0.67);
-        border: 1px solid #dee2e6;
+        background: #f5f7fa;
+        padding: 8px;
         border-radius: 8px;
-        margin-bottom: .5rem;
-        color: #212529;
-        transition: background .2s;
+        line-height: 1;
     }
 
-    .audit-list-group .form-check-input:checked ~ .audit-label {
-        color: #2f3542 !important;
+    /* Highlight icon khi chọn */
+    .form-check-input:checked + .custom-radio-wrapper .audit-icon {
+        background: #2f3542;
+        color: #fff;
     }
 
-    .audit-list-group .list-group-item:hover {
-        background-color: rgba(47,53,66,.12);
-    }
-
+    /* Hiệu ứng viền khi chọn input radio */
+    .audit-radio-input:checked + label {
+        border-color: #2f3542;
+        background-color: rgba(47,53,66,0.03);
     }
 </style>
 
 <div class="container-fluid py-4 px-3 animate__animated animate__fadeIn">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="admin-gradient-heading mb-0">
-                <i class="bi bi-shield-lock-fill me-2"></i>Audit Log Center
-            </h2>
-            <p class="text-muted mb-0 small">Kiểm tra nhật ký hoạt động của hệ thống</p>
+            <h2 class="admin-gradient-heading mb-0">Quản lý Audit Logs</h2>
+            <p class="text-muted mb-0 small">Kiểm tra nhật ký hoạt động và bảo mật của hệ thống</p>
         </div>
-        <span class="badge bg-light text-dark px-3 py-2 fw-semibold shadow-sm">System Secure Zone</span>
     </div>
 
-    <div class="glass-card-admin card border-0 shadow-sm p-4 mb-3">
-        <form id="auditForm" method="get">
-            <div class="mb-3">
-                <label class="audit-label mb-2">Chọn loại Audit Log để xem chi tiết:</label>
-                <div class="audit-list-group">
-                    <div class="list-group-item">
-                        <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Users" value="Users" />
-                            <label class="form-check-label audit-label mb-0" for="Users">
-                                <i class="bi bi-person-badge audit-radio-icon"></i>
-                                <strong>Users</strong>
-                                <span class="d-block text-muted small">Quản lý tài khoản, đăng nhập, reset, phân quyền.</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Customers" value="Customers" />
-                            <label class="form-check-label audit-label mb-0" for="Customers">
-                                <i class="bi bi-building audit-radio-icon"></i>
-                                <strong>Customers</strong>
-                                <span class="d-block text-muted small">Nhật ký thay đổi thông tin khách hàng.</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Deals" value="Deals" />
-                            <label class="form-check-label audit-label mb-0" for="Deals">
-                                <i class="bi bi-briefcase audit-radio-icon"></i>
-                                <strong>Deals</strong>
-                                <span class="d-block text-muted small">Hoạt động liên quan đến deals, trạng thái.</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" type="radio" name="selectedLog" id="Contracts" value="Contracts" />
-                            <label class="form-check-label audit-label mb-0" for="Contracts">
-                                <i class="bi bi-file-earmark-text audit-radio-icon"></i>
-                                <strong>Contracts</strong>
-                                <span class="d-block text-muted small">Quản lý và duyệt hợp đồng, nhật ký.</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="glass-card-admin card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form id="auditForm" method="get">
+                <h5 class="mb-3 form-label">Chọn loại dữ liệu cần kiểm tra:</h5>
 
-            <div class="mt-4 d-flex justify-content-between align-items-center">
-                <div class="text-muted small">
-                    <i class="bi bi-info-circle me-1"></i>
-                    <strong>Chỉ Admin cấp cao</strong> có thể xem các Audit Log chi tiết.
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input class="form-check-input d-none audit-radio-input" type="radio" name="selectedLog" id="Users" value="Users" />
+                        <label class="audit-option-card w-100" for="Users">
+                            <div class="custom-radio-wrapper">
+                                <i class="bi bi-person-badge audit-icon"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1" style="color: #2f3542;">Users Log</h6>
+                                    <span class="text-muted small">Quản lý tài khoản, đăng nhập, reset mật khẩu và phân quyền.</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="col-md-6">
+                        <input class="form-check-input d-none audit-radio-input" type="radio" name="selectedLog" id="Customers" value="Customers" />
+                        <label class="audit-option-card w-100" for="Customers">
+                            <div class="custom-radio-wrapper">
+                                <i class="bi bi-building audit-icon"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1" style="color: #2f3542;">Customers Log</h6>
+                                    <span class="text-muted small">Lịch sử thêm mới, cập nhật và thay đổi thông tin khách hàng.</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="col-md-6">
+                        <input class="form-check-input d-none audit-radio-input" type="radio" name="selectedLog" id="Deals" value="Deals" />
+                        <label class="audit-option-card w-100" for="Deals">
+                            <div class="custom-radio-wrapper">
+                                <i class="bi bi-briefcase audit-icon"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1" style="color: #2f3542;">Deals Log</h6>
+                                    <span class="text-muted small">Theo dõi hoạt động tạo deal, thay đổi trạng thái và tiến độ.</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="col-md-6">
+                        <input class="form-check-input d-none audit-radio-input" type="radio" name="selectedLog" id="Contracts" value="Contracts" />
+                        <label class="audit-option-card w-100" for="Contracts">
+                            <div class="custom-radio-wrapper">
+                                <i class="bi bi-file-earmark-text audit-icon"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1" style="color: #2f3542;">Contracts Log</h6>
+                                    <span class="text-muted small">Nhật ký quản lý hợp đồng, xét duyệt và chỉnh sửa điều khoản.</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
-                <button type="button" id="viewLogsBtn" class="btn btn-admin-gradient rounded-pill shadow-sm px-4">
-                    <i class="bi bi-eye-fill me-2"></i> Xem log chi tiết
-                </button>
-            </div>
-        </form>
+
+                <div class="mt-4 d-flex justify-content-end">
+                    <button type="button" id="viewLogsBtn" class="btn btn-admin-gradient px-4 py-2 rounded-3">
+                        Xem chi tiết <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<script>
-    document.getElementById("viewLogsBtn").addEventListener("click", function () {
-        const selected = document.querySelector('input[name="selectedLog"]:checked');
-        if (!selected) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Chưa chọn loại log!',
-                text: 'Vui lòng chọn một loại Audit Log trước khi xem chi tiết.',
-                confirmButtonColor: '#58606c'
-            });
-            return;
-        }
-        const target = selected.value;
-        window.location.href = `/Admin/Audit/${target}`;
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.getElementById("viewLogsBtn").addEventListener("click", function () {
+            // Lấy radio đã check
+            const selected = document.querySelector('input[name="selectedLog"]:checked');
+
+            if (!selected) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Chưa chọn dữ liệu',
+                    text: 'Vui lòng chọn một loại Audit Log để tiếp tục.',
+                    confirmButtonColor: '#58606c',
+                    confirmButtonText: 'Đã hiểu'
+                });
+                return;
+            }
+
+            const target = selected.value;
+            window.location.href = `/Admin/Audit/${target}`;
+        });
+    </script>
+}
