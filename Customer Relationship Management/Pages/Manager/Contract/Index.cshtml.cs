@@ -53,15 +53,16 @@ namespace Customer_Relationship_Management.Pages.Manager.Contract
 
             try
             {
-                await _contractService.ApproveAsync(id, ContractApprovalStatus.Approved.ToString(), approverId);
-                TempData["SuccessMessage"] = $"✅ Hợp đồng #{id} đã được phê duyệt.";
+                // SỬA TẠI ĐÂY: Chuyển thành "ManagerApproved" thay vì "Approved"
+                await _contractService.ApproveAsync(id, "ManagerApproved", approverId);
+                TempData["SuccessMessage"] = $"✅ Hợp đồng #{id} đã được thông qua bước 1. Chờ Giám đốc ký.";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Lỗi khi phê duyệt: {ex.Message}";
+                TempData["ErrorMessage"] = $"Lỗi khi duyệt: {ex.Message}";
             }
 
-            return RedirectToPage(new { status = status ?? "Pending", id = id }); // giữ modal mở, show cập nhật
+            return RedirectToPage(new { status = status ?? "Pending", id = id });
         }
 
         public async STT.Task<IActionResult> OnPostRejectAsync(int id, string? status, int? selectedId)

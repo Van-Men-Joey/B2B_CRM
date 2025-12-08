@@ -1,6 +1,7 @@
-﻿using Customer_Relationship_Management.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Customer_Relationship_Management.Models;
+using Customer_Relationship_Management.ViewModels;
 
 namespace Customer_Relationship_Management.Services.Interfaces
 {
@@ -19,5 +20,7 @@ namespace Customer_Relationship_Management.Services.Interfaces
 
         // Ví dụ: approve/reject contract
         Task ApproveAsync(int id, string newStatus, int? currentUserId = null);
+        Task DirectorSignAsync(int id, int directorId);
+        Task ProcessPaymentWebhookAsync(WebhookDto data);
     }
 }

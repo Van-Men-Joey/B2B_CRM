@@ -159,9 +159,19 @@
                         {
                             var approvalBadge = (c.ApprovalStatus ?? "").ToLowerInvariant() switch
                             {
-                                "approved" => "badge bg-success",
+                                "approved" => "badge bg-success",        // Đã xong 2 bước
+                                "managerapproved" => "badge bg-info",    // MỚI: Manager xong, chờ Director (Màu xanh dương)
                                 "rejected" => "badge bg-danger",
-                                _ => "badge bg-warning text-dark"
+                                _ => "badge bg-warning text-dark"        // Pending
+                            };
+
+                            var approvalText = (c.ApprovalStatus ?? "") switch
+                            {
+                                "Approved" => "Đã duyệt (Giám đốc)",
+                                "ManagerApproved" => "Chờ Giám đốc ký",
+                                "Pending" => "Chờ Manager duyệt",
+                                "Rejected" => "Bị từ chối",
+                                _ => c.ApprovalStatus
                             };
                             var paymentBadge = (c.PaymentStatus ?? "").ToLowerInvariant() switch
                             {
@@ -186,21 +196,27 @@
                                 </td>
                                 <td><span class="@approvalBadge">@c.ApprovalStatus</span></td>
                                 <td>
-                                    <span class="@paymentBadge">@c.PaymentStatus</span>
+                                    <span id="payment-badge-@c.ContractID" class="@paymentBadge">@c.PaymentStatus</span>
+
+                                    @* Chỉ hiện nút QR nếu Đã duyệt và Chưa thanh toán *@
                                     @if (string.Equals(c.ApprovalStatus, "Approved", StringComparison.OrdinalIgnoreCase)
                                                                 && !string.Equals(c.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <div class="mt-1 d-flex gap-1 justify-content-center">
+                                        <div class="mt-1 d-flex gap-1 justify-content-center" id="action-group-@c.ContractID">
                                             <button class="btn btn-sm btn-outline-primary btn-pay-qr"
                                                     data-contract-id="@c.ContractID"
                                                     data-qr-amount="@(c.Deal?.Value ?? 0)"
+                                                    @* SỬA NỘI DUNG CK ĐỂ KHỚP VỚI REGEX Ở BACKEND *@
                                                     data-qr-info="@($"Thanh toan hop dong #{c.ContractID}")">
-                                                QR
+                                                <i class="bi bi-qr-code"></i> Lấy mã QR
                                             </button>
-                                            <button class="btn btn-sm btn-outline-dark btn-pay-cash"
-                                                    data-contract-id="@c.ContractID">
-                                                Tiền mặt
-                                            </button>
+                                            @* Đã BỎ nút Tiền mặt theo yêu cầu *@
+                                        </div>
+
+                                        @* Thêm spinner chờ *@
+                                        <div class="d-none small text-muted mt-1 fst-italic listening-status" id="listening-@c.ContractID">
+                                            <span class="spinner-grow spinner-grow-sm text-success" role="status" style="width: 0.5rem; height: 0.5rem;"></span>
+                                            Đang chờ ngân hàng...
                                         </div>
                                     }
                                 </td>
@@ -568,16 +584,28 @@
             const url = `https://img.vietqr.io/image/${bankCode}-${bankAcc}-compact.png?amount=${Math.round(amount)}&addInfo=${encodeURIComponent(info)}&accountName=${encodeURIComponent(bankName)}`;
             return url;
         }
+        // --- SỬA LẠI HÀM OPEN QR MODAL ---
+        // Khi mở QR thì hiện dòng chữ "Đang chờ..."
         function openQRModal(contractId, amount, info) {
             $('#qrCtrLabel').textContent = `#${contractId}`;
             const imgUrl = buildQR(amount, info);
-            const imgEl = $('#qrImg');
-            imgEl.src = imgUrl;
-            $('#qrInfoText').textContent = `Quét bằng ứng dụng ngân hàng/MoMo/ZaloPay hỗ trợ VietQR để thanh toán: ${amount.toLocaleString()} đ`;
+            $('#qrImg').src = imgUrl;
+            $('#qrInfoText').textContent = `Hệ thống đang tự động kiểm tra giao dịch... (${amount.toLocaleString()} đ)`;
+
+            // Link download
             const a = $('#btnDownloadQR');
             a.href = imgUrl;
             a.download = `QR_Contract_${contractId}.png`;
+
             $('#qrContractId').value = contractId;
+
+            // Bỏ nút "Xác nhận tiền mặt" trong Modal QR nếu còn sót lại
+            // Hiển thị text loading bên ngoài table
+            const listening = document.getElementById(`listening-${contractId}`);
+            if(listening) {
+                listening.classList.remove('d-none');
+            }
+
             new bootstrap.Modal(document.getElementById('qrPayModal')).show();
         }
         // Mark paid after QR

@@ -89,7 +89,7 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
                 .ToList();
         }
 
-        // Lock/Unlock user (không áp dụng cho Admin)
+        // Lock/Unlock user
         public async Task<IActionResult> OnPostToggleDeleteAsync(int id)
         {
             var user = await _userService.GetByIdAsync(id);
@@ -101,6 +101,7 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
                 return RedirectToPage();
             }
 
+            // Đảo trạng thái Locked <-> Active
             user.Status = string.Equals(user.Status, "Locked", StringComparison.OrdinalIgnoreCase) ? "Active" : "Locked";
             user.UpdatedAt = DateTime.UtcNow;
 
@@ -110,7 +111,7 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
             return RedirectToPage();
         }
 
-        // Soft delete (không áp dụng cho Admin)
+        // Soft delete
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
             var user = await _userService.GetByIdAsync(id);
@@ -127,20 +128,14 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
             }
 
             int? adminId = GetCurrentUserId();
-
-            if (!user.IsDeleted)
-            {
-                user.IsDeleted = true;
-                user.Status = "Locked";
-                user.UpdatedAt = DateTime.UtcNow;
-                await _userService.UpdateUserAsync(user, adminId);
-            }
+            // Gọi hàm DeleteUserAsync của service (đã có logic soft delete)
+            await _userService.DeleteUserAsync(id, adminId);
 
             TempData["Success"] = "Xóa người dùng thành công.";
             return RedirectToPage();
         }
 
-        // Force change password (không áp dụng cho Admin)
+        // Force change password
         public async Task<IActionResult> OnPostForceChangeAsync(int id)
         {
             var user = await _userService.GetByIdAsync(id);
@@ -158,6 +153,7 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
                 return RedirectToPage();
             }
 
+            // Set cờ ForceChangePassword = true
             user.ForceChangePassword = true;
             user.UpdatedAt = DateTime.UtcNow;
 
@@ -168,7 +164,7 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
             return RedirectToPage();
         }
 
-        // Create user (chỉ Employee / Manager)
+        // Create user
         public async Task<IActionResult> OnPostCreateAsync()
         {
             if (!ModelState.IsValid)
@@ -177,12 +173,15 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
                 return RedirectToPage();
             }
 
-            if (CreateInput.RoleID != 1 && CreateInput.RoleID != 2)
+            // --- SỬA LỖI TẠI ĐÂY ---
+            // Cho phép tạo Role 1 (Employee), 2 (Manager), 4 (Director)
+            if (CreateInput.RoleID != 1 && CreateInput.RoleID != 2 && CreateInput.RoleID != 4)
             {
-                TempData["Error"] = "Bạn chỉ được tạo Employee hoặc Manager.";
+                TempData["Error"] = "Vai trò không hợp lệ. Chỉ được tạo Employee, Manager hoặc Director.";
                 return RedirectToPage();
             }
 
+            // Logic bắt buộc Manager chỉ áp dụng cho Employee (RoleID = 1)
             if (CreateInput.RoleID == 1 && CreateInput.ManagerID == null)
             {
                 TempData["Error"] = "Nhân viên bắt buộc chọn Manager.";
@@ -198,19 +197,20 @@ namespace Customer_Relationship_Management.Pages.Admin.Account
                 RoleID = CreateInput.RoleID,
                 ManagerID = CreateInput.ManagerID,
                 Status = "Active",
-                PasswordHash = PasswordHasher.HashPassword("demo"),
+                PasswordHash = PasswordHasher.HashPassword("demo"), // Pass mặc định
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
             int? adminId = GetCurrentUserId();
+            // Service sẽ tự xử lý việc ManagerID = null nếu Role != Employee
             await _userService.AddUserAsync(user, adminId);
 
             TempData["Success"] = "Tạo người dùng thành công (mật khẩu mặc định: demo).";
             return RedirectToPage();
         }
 
-        // Update Manager (không áp dụng cho Admin)
+        // Update Manager
         public async Task<IActionResult> OnPostUpdateManagerAsync()
         {
             if (UpdateMgr.UserID <= 0)

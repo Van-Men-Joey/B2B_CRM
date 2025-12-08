@@ -6,13 +6,13 @@
 }
 
 <style>
+    /* ... Style cũ ... */
     .admin-gradient-heading {
         background: linear-gradient(90deg, #2f3542 0%, #58606c 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: bold;
         font-size: 2rem;
-        letter-spacing: -0.5px;
     }
 
     .btn-admin-gradient {
@@ -20,12 +20,6 @@
         color: #fff !important;
         border: none;
         transition: .3s;
-    }
-
-    .btn-admin-outline {
-        background: transparent;
-        color: #2f3542 !important;
-        border: 1px solid #58606c;
     }
 
     .glass-card-admin {
@@ -36,36 +30,6 @@
         border: 1px solid #eee;
     }
 
-    .table-card-admin {
-        background: #fff;
-        border-radius: .75rem;
-        box-shadow: 0 1px 8px rgba(44,62,80,0.07);
-    }
-
-    .admin-table-striped tbody tr:nth-child(odd) {
-        background-color: #f5f7fa !important;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #58606c !important;
-    }
-
-    .form-control, .form-select {
-        border-radius: 8px;
-    }
-
-    .mgr-error {
-        color: #d9534f;
-        font-size: .9rem;
-    }
-
-    .filter-card {
-        background: #fff;
-        border-radius: .75rem;
-        box-shadow: 0 1px 8px rgba(0,0,0,.06);
-    }
-
     .badge-admin {
         background: #2f3542;
         color: #fff;
@@ -73,17 +37,14 @@
         padding: .35rem .5rem;
         border-radius: 6px;
     }
+
+    .text-director {
+        color: #d63384;
+        font-weight: bold;
+    }
 </style>
 
 <div class="container-fluid px-3 py-4 animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="admin-gradient-heading mb-0">Quản lý Tài khoản</h2>
-            <p class="text-muted mb-0 small">Quản trị, tìm kiếm, cấp quyền và khóa tài khoản người dùng hệ thống</p>
-        </div>
-    </div>
-
-    <!-- CREATE USER FORM -->
     <div class="card glass-card-admin mb-4 border-0 shadow-sm">
         <div class="card-body">
             <h5 class="mb-3">Tạo người dùng mới</h5>
@@ -109,79 +70,33 @@
                     <label class="form-label">Vai trò</label>
                     <select class="form-select" asp-for="CreateInput.RoleID" id="roleSelect" required>
                         <option value="">-- Chọn vai trò --</option>
-                        <option value="1">Employee</option>
+                        <option value="1">Employee (Cần Manager)</option>
                         <option value="2">Manager</option>
+                        <option value="4">Director (Giám đốc)</option>
                     </select>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Quản lý trực tiếp (bắt buộc nếu Employee)</label>
-                    <select class="form-select" asp-for="CreateInput.ManagerID" id="managerSelect">
+                    <label class="form-label">Quản lý trực tiếp</label>
+                    <select class="form-select" asp-for="CreateInput.ManagerID" id="managerSelect" disabled>
                         <option value="">-- Chọn Manager --</option>
                         @foreach (var m in Model.Managers)
                         {
                             <option value="@m.Id">@m.Display</option>
                         }
                     </select>
-                    <div class="mgr-error d-none" id="mgrError">Nhân viên bắt buộc chọn Manager.</div>
+                    <div class="small text-danger mt-1 d-none" id="mgrError">
+                        <i class="bi bi-exclamation-circle"></i> Nhân viên bắt buộc phải chọn Manager.
+                    </div>
                 </div>
 
                 <div class="col-12">
-                    <button class="btn btn-admin-gradient">Tạo mới (mật khẩu mặc định: demo)</button>
+                    <button class="btn btn-admin-gradient">Tạo mới (Password: demo)</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- FILTER FORM -->
-    <div class="card filter-card mb-4 p-3">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">UserCode</label>
-                <input class="form-control" name="FilterUserCode" value="@Model.FilterUserCode" placeholder="Mã..." />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Username</label>
-                <input class="form-control" name="FilterUsername" value="@Model.FilterUsername" placeholder="Tên..." />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Role</label>
-                <select class="form-select" name="FilterRoleId">
-                    <option value="">-- Tất cả --</option>
-                    <option value="1" selected="@(Model.FilterRoleId == 1)">Employee</option>
-                    <option value="2" selected="@(Model.FilterRoleId == 2)">Manager</option>
-                    <option value="3" selected="@(Model.FilterRoleId == 3)">Admin</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Trạng thái khóa</label>
-                <select class="form-select" name="FilterLocked">
-                    <option value="">-- Tất cả --</option>
-                    <option value="true" selected="@(Model.FilterLocked == true)">Đang khóa</option>
-                    <option value="false" selected="@(Model.FilterLocked == false)">Không khóa</option>
-                </select>
-            </div>
-            <!-- CHỈ SỬA DÒNG NÀY: bỏ flex-grow-1 để nút Lọc không kéo dài -->
-            <div class="col-md-4 d-flex gap-2">
-                <button type="submit" class="btn btn-admin-gradient">Lọc</button>
-                <a class="btn btn-admin-outline" href="@Url.Page("/Admin/Account/ManageUser")">Đặt lại</a>
-            </div>
-        </form>
-        <div class="small text-muted mt-2">
-            Tổng số: @Model.Users.Count()
-        </div>
-    </div>
-
-    @if (TempData["Error"] is string err)
-    {
-        <div class="alert alert-danger">@err</div>
-    }
-    @if (TempData["Success"] is string ok)
-    {
-        <div class="alert alert-success">@ok</div>
-    }
-
-    <!-- USERS TABLE -->
     <div class="table-responsive table-card-admin card p-3">
         <table class="table admin-table-striped align-middle mb-0">
             <thead class="table-light">
@@ -198,94 +113,96 @@
             <tbody>
                 @foreach (var u in Model.Users)
                 {
-                    bool isAdmin = string.Equals(u.RoleName, "Admin", StringComparison.OrdinalIgnoreCase) || u.RoleID == 3;
+                    bool isAdmin = u.RoleID == 3 || u.RoleName == "Admin";
+                    bool isDirector = u.RoleID == 4 || u.RoleName == "Director";
                     <tr>
                         <td>@u.UserCode</td>
                         <td>@u.Username</td>
                         <td>@u.FullName</td>
-
                         <td>
                             @if (isAdmin)
                             {
-                                <span>@u.RoleName <span class="badge-admin">Admin</span></span>
+                                <span class="badge-admin">Admin</span>
+                            }
+                            else if (isDirector)
+                            {
+                                <span class="badge bg-danger">Director</span>
                             }
                             else
                             {
                                 <span>@u.RoleName</span>
                             }
                         </td>
-
                         <td>
-                            @if (!isAdmin && u.RoleName == "Employee" && !u.IsDeleted)
+                            @if (!isAdmin && !isDirector && u.RoleName == "Employee" && !u.IsDeleted)
                             {
                                 <form method="post" asp-page-handler="UpdateManager" class="d-flex gap-2 align-items-center js-confirm"
-                                      data-title="Cập nhật Manager?"
-                                      data-text="Xác nhận đổi Manager cho @u.Username?"
-                                      data-icon="info"
-                                      data-confirm="#58606c">
+                                      data-title="Đổi Manager?" data-text="Cập nhật quản lý cho @u.Username?">
                                     <input type="hidden" name="UpdateMgr.UserID" value="@u.UserID" />
-                                    <select class="form-select form-select-sm" name="UpdateMgr.ManagerID" style="min-width: 240px;">
-                                        <option value="">-- Chọn Manager --</option>
+                                    <select class="form-select form-select-sm" name="UpdateMgr.ManagerID" style="min-width: 150px;">
+                                        <option value="">-- Chọn --</option>
                                         @foreach (var m in Model.Managers)
                                         {
                                             <option value="@m.Id" selected="@(u.ManagerID == m.Id)">@m.Display</option>
                                         }
                                     </select>
-                                    <button class="btn btn-sm btn-admin-gradient">Lưu</button>
+                                    <button class="btn btn-sm btn-admin-gradient"><i class="bi bi-check"></i></button>
                                 </form>
-                            }
-                            else if (u.RoleName == "Employee" && u.IsDeleted)
-                            {
-                                <span class="text-muted small">Đã xóa</span>
-                            }
-                        </td>
-
-                        <td>@(u.IsDeleted ? "Đã xóa" : u.Status)</td>
-
-                        <td class="text-end">
-                            @if (isAdmin)
-                            {
-                                <span class="text-muted small">Admin - không quản lý</span>
-                            }
-                            else if (u.IsDeleted)
-                            {
-                                <span class="small text-muted">Tài khoản đã xóa</span>
                             }
                             else
                             {
-                                <form method="post" asp-page-handler="ToggleDelete" asp-route-id="@u.UserID"
-                                      class="d-inline js-confirm"
-                                      data-title="@(u.Status == "Locked" ? "Mở khóa tài khoản?" : "Khóa tài khoản?")"
-                                      data-text="@(u.Status == "Locked" ? $"Mở khóa {u.Username}?" : $"Khóa {u.Username}?")"
-                                      data-icon="warning"
-                                      data-confirm="@(u.Status == "Locked" ? "#2f3542" : "#dc3545")">
-                                    @if (string.Equals(u.Status, "Locked", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <button type="submit" class="btn btn-sm btn-admin-gradient">Unlock</button>
-                                    }
-                                    else
-                                    {
-                                        <button type="submit" class="btn btn-sm btn-danger">Lock</button>
-                                    }
-                                </form>
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (u.IsDeleted)
+                            {
+                                <span class="badge bg-secondary">Đã xóa</span>
+                            }
+                            else
+                            {
+                                <span class="@(u.Status == "Locked" ? "text-danger fw-bold" : "text-success")">
+                                    @u.Status
+                                </span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (isAdmin)
+                            {
+                                <span class="text-muted fst-italic small"><i class="bi bi-shield-lock-fill"></i> Protected</span>
+                            }
+                            else if (u.IsDeleted)
+                            {
+                                <span class="small text-muted">Deleted</span>
+                            }
+                            else
+                            {
+                                <div class="btn-group" role="group">
+                                    @* 1. Nút Yêu cầu đổi mật khẩu (Force Change) *@
+                                    <form method="post" asp-page-handler="ForceChange" asp-route-id="@u.UserID" class="d-inline js-confirm"
+                                          data-title="Yêu cầu đổi mật khẩu?"
+                                          data-text="Người dùng @u.Username sẽ buộc phải đổi mật khẩu ở lần đăng nhập tới.">
+                                        <button class="btn btn-sm btn-outline-warning" title="Yêu cầu đổi mật khẩu">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                    </form>
 
-                                <form method="post" asp-page-handler="ForceChange" asp-route-id="@u.UserID"
-                                      class="d-inline js-confirm"
-                                      data-title="Yêu cầu đổi mật khẩu?"
-                                      data-text="Bắt buộc @u.Username đổi mật khẩu khi đăng nhập?"
-                                      data-icon="info"
-                                      data-confirm="#ffc107">
-                                    <button class="btn btn-sm btn-warning">Require PW Change</button>
-                                </form>
+                                    @* 2. Nút Khóa / Mở khóa *@
+                                    <form method="post" asp-page-handler="ToggleDelete" asp-route-id="@u.UserID" class="d-inline js-confirm"
+                                          data-title="@(u.Status == "Locked" ? "Mở khóa?" : "Khóa?")"
+                                          data-text="@(u.Status == "Locked" ? $"Mở khóa {u.Username}?" : $"Khóa {u.Username}?")"
+                                          data-confirm="@(u.Status == "Locked" ? "#2f3542" : "#dc3545")">
+                                        <button class="btn btn-sm @(u.Status == "Locked" ? "btn-admin-gradient" : "btn-outline-danger")" title="@(u.Status == "Locked" ? "Mở khóa" : "Khóa tài khoản")">
+                                            <i class="bi @(u.Status == "Locked" ? "bi-unlock" : "bi-lock")"></i>
+                                        </button>
+                                    </form>
 
-                                <form method="post" asp-page-handler="Delete" asp-route-id="@u.UserID"
-                                      class="d-inline js-confirm"
-                                      data-title="Xóa người dùng này?"
-                                      data-text="Bạn chắc chắn muốn xóa @u.Username? Thao tác này sẽ khóa vĩnh viễn tài khoản."
-                                      data-icon="error"
-                                      data-confirm="#dc3545">
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
+                                    @* 3. Nút Xóa mềm *@
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@u.UserID" class="d-inline js-confirm"
+                                          data-title="Xóa tài khoản?" data-text="Hành động này sẽ xóa mềm tài khoản @u.Username" data-confirm="#dc3545">
+                                        <button class="btn btn-sm btn-danger" title="Xóa tài khoản"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
                             }
                         </td>
                     </tr>
@@ -298,49 +215,57 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Create form: require Manager when Role == Employee (1)
+        // 1. Xử lý Logic ẩn/hiện Manager Select
+        const roleSelect = document.getElementById('roleSelect');
+        const managerSelect = document.getElementById('managerSelect');
+        const mgrError = document.getElementById('mgrError');
+
+        function toggleManagerSelect() {
+            const role = roleSelect.value;
+            // Chỉ Role = 1 (Employee) mới active ô chọn Manager
+            if (role === '1') {
+                managerSelect.removeAttribute('disabled');
+                managerSelect.setAttribute('required', 'required');
+            } else {
+                managerSelect.setAttribute('disabled', 'disabled');
+                managerSelect.removeAttribute('required');
+                managerSelect.value = "";
+                mgrError.classList.add('d-none');
+            }
+        }
+
+        roleSelect?.addEventListener('change', toggleManagerSelect);
+
+        // 2. Validate form submit
         document.getElementById('createUserForm')?.addEventListener('submit', function (e) {
-            const role = document.getElementById('roleSelect')?.value;
-            const mgr = document.getElementById('managerSelect')?.value;
-            const err = document.getElementById('mgrError');
+            const role = roleSelect.value;
+            const mgr = managerSelect.value;
             if (role === '1' && !mgr) {
                 e.preventDefault();
-                err?.classList.remove('d-none');
-            } else {
-                err?.classList.add('d-none');
+                mgrError.classList.remove('d-none');
             }
         });
 
-        // toggle required attribute when role changes
-        document.getElementById('roleSelect')?.addEventListener('change', function () {
-            const needMgr = this.value === '1';
-            const mgrSelect = document.getElementById('managerSelect');
-            if (needMgr) {
-                mgrSelect?.setAttribute('required', 'required');
-            } else {
-                mgrSelect?.removeAttribute('required');
-            }
-        });
-
-        // SweetAlert2 confirmation
+        // 3. Confirm Dialog
         document.addEventListener('submit', function (e) {
             const form = e.target.closest('.js-confirm');
             if (!form) return;
-
             e.preventDefault();
-            const title = form.dataset.title || 'Bạn chắc chắn?';
-            const text = form.dataset.text || '';
-            const icon = form.dataset.icon || 'question';
-            const confirmColor = form.dataset.confirm || '#58606c';
-
             Swal.fire({
-                title, text, icon,
+                title: form.dataset.title || 'Xác nhận?',
+                text: form.dataset.text || '',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'Xác nhận',
-                cancelButtonText: 'Hủy',
-                confirmButtonColor: confirmColor,
-                cancelButtonColor: '#6c757d'
-            }).then(r => { if (r.isConfirmed) form.submit(); });
+                confirmButtonColor: form.dataset.confirm || '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
         });
+
+        // Init logic khi load trang
+        toggleManagerSelect();
     </script>
 }

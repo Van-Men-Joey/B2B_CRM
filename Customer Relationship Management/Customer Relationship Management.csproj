@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
     <Folder Include="Pages\Manager\Employee\" />
     <Folder Include="Pages\Profile\" />
     <Folder Include="wwwroot\css\" />

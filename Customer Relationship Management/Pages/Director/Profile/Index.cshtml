@@ -1,0 +1,92 @@
+﻿@page
+@model Customer_Relationship_Management.Pages.Director.Profile.IndexModel
+@{
+    Layout = "~/Pages/Shared/_LayoutDirector.cshtml";
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<style>
+    /* ... (Giữ nguyên Style) ... */
+    .glass-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border-top: 4px solid var(--dir-gold);
+    }
+
+    .btn-gold {
+        background-color: var(--dir-gold);
+        color: #fff;
+        border: none;
+    }
+
+        .btn-gold:hover {
+            background-color: var(--dir-gold-hover);
+            color: #fff;
+        }
+
+    .form-control:focus {
+        border-color: var(--dir-gold);
+        box-shadow: 0 0 0 0.25rem rgba(197, 160, 89, 0.25);
+    }
+</style>
+
+<h3 class="fw-bold mb-4" style="color: var(--dir-dark);">Hồ sơ Giám đốc</h3>
+
+<div class="glass-card p-4">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 border-start border-success border-4">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @foreach (var modelState in ViewData.ModelState.Values)
+            {
+                foreach (var error in modelState.Errors)
+                {
+                    <div>@error.ErrorMessage</div>
+                }
+            }
+        </div>
+    }
+
+    <form method="post">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Mã định danh</label>
+                <input asp-for="CurrentUser.UserCode" class="form-control bg-light" readonly />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Email</label>
+                <input asp-for="CurrentUser.Email" class="form-control bg-light" readonly />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Họ và tên</label>
+                <input asp-for="CurrentUser.FullName" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Số điện thoại</label>
+                <input asp-for="CurrentUser.Phone" class="form-control" />
+            </div>
+            <div class="col-12 text-end mt-4">
+                <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#passModal">
+                    <i class="bi bi-key"></i> Đổi mật khẩu
+                </button>
+                <button type="submit" class="btn btn-gold px-4">
+                    <i class="bi bi-save"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="passModal" tabindex="-1">
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

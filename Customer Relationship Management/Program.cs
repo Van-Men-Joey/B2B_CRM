@@ -84,6 +84,7 @@ namespace Customer_Relationship_Management
             // builder.Services.AddScoped<INotificationService, NotificationService>();
             // Nếu đã có file đó rồi thì mở comment ra:
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddSignalR();
 
             var app = builder.Build();
 
@@ -129,6 +130,7 @@ namespace Customer_Relationship_Management
 
             app.MapRazorPages();
             app.MapControllers();
+            app.MapHub<Customer_Relationship_Management.Hubs.PaymentHub>("/paymentHub");
 
             app.Run();
         }

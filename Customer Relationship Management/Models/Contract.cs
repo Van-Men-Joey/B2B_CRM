@@ -8,6 +8,7 @@ namespace Customer_Relationship_Management.Models
     public enum ContractApprovalStatus
     {
         Pending,
+        ManagerApproved, // Thêm trạng thái này nếu chưa có trong Enum
         Approved,
         Rejected
     }
@@ -32,7 +33,6 @@ namespace Customer_Relationship_Management.Models
         public Deal? Deal { get; set; }
 
         [Required]
-        // Bỏ giới hạn để khớp NVARCHAR(MAX); nếu muốn giới hạn thì sửa DB.
         public string ContractContent { get; set; } = string.Empty;
 
         [MaxLength(250)]
@@ -57,10 +57,22 @@ namespace Customer_Relationship_Management.Models
         [ForeignKey(nameof(CreatedByUserID))]
         public User? CreatedBy { get; set; }
 
+        // --- NGƯỜI DUYỆT CẤP 1 (MANAGER) ---
         public int? ApprovedByUserID { get; set; }
 
         [ForeignKey(nameof(ApprovedByUserID))]
         public User? ApprovedBy { get; set; }
+
+        public DateTime? ApprovedAt { get; set; }
+
+        // --- NGƯỜI DUYỆT CẤP 2 (GIÁM ĐỐC) - BẠN ĐANG THIẾU PHẦN NÀY ---
+        public int? DirectorApprovedByUserID { get; set; }
+
+        [ForeignKey(nameof(DirectorApprovedByUserID))]
+        public User? DirectorApprovedBy { get; set; }
+
+        public DateTime? DirectorApprovedAt { get; set; }
+        // ----------------------------------------------------------------
 
         [MaxLength(250)]
         public string? QRCodeLink { get; set; }
@@ -69,16 +81,13 @@ namespace Customer_Relationship_Management.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Nếu DB đang NOT NULL thì đổi thành non-nullable và cập nhật khi update.
         public DateTime? UpdatedAt { get; set; }
 
         public bool IsDeleted { get; set; } = false;
 
         public bool IsSensitive { get; set; } = false;
 
-        public DateTime? ApprovedAt { get; set; }
-
-        // Concurrency token (tùy chọn)
+        // Concurrency token
         [Timestamp]
         public byte[]? RowVersion { get; set; }
     }

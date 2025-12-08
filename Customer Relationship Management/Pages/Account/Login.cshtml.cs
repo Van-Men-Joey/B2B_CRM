@@ -151,6 +151,7 @@ namespace Customer_Relationship_Management.Pages.Account
             {
                 "Admin" => RedirectToPage("/Admin/Dashboard"),
                 "Manager" => RedirectToPage("/Manager/Dashboard"),
+                "Director" => RedirectToPage("/Director/Contract/Index"),
                 "Employee" => RedirectToPage("/Employee/Dashboard"),
                 _ => RedirectToPage("/Employee/Dashboard")
             };

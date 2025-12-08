@@ -1,0 +1,282 @@
+﻿@* @page
+@model Customer_Relationship_Management.Pages.Director.Contract.IndexModel
+@{
+    Layout = "_LayoutDirector"; // Hoặc _LayoutEmployee nếu chưa có layout riêng
+    ViewData["Title"] = "Phê duyệt Hợp đồng";
+}
+
+<style>
+    /* Theme Giám đốc: Deep Blue & Gold */
+    :root {
+        --dir-bg: #0f2027;
+        --dir-gradient: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+        --dir-gold: #c5a059;
+        --dir-gold-hover: #e6c67d;
+        --dir-text: #ffffff;
+    }
+
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .director-header {
+        background: var(--dir-gradient);
+        color: var(--dir-text);
+        padding: 2rem 1.5rem;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        margin-bottom: -30px; /* Overlap effect */
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 1);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        border-top: 4px solid var(--dir-gold);
+        position: relative;
+        z-index: 10;
+    }
+
+    .btn-gold {
+        background-color: var(--dir-gold);
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+
+        .btn-gold:hover {
+            background-color: var(--dir-gold-hover);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(197, 160, 89, 0.3);
+        }
+
+    .nav-tabs-director .nav-link {
+        color: #555;
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid transparent;
+    }
+
+        .nav-tabs-director .nav-link.active {
+            color: var(--dir-gold);
+            border-bottom: 3px solid var(--dir-gold);
+            background: transparent;
+        }
+
+    .signature-pad {
+        border: 2px dashed #ccc;
+        background: #fdfdfd;
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-style: italic;
+    }
+</style>
+
+<div class="director-header animate__animated animate__fadeInDown">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-pen-fill me-2 text-warning"></i>Ký duyệt Hợp đồng</h2>
+            <p class="mb-0 opacity-75 small">Xin chào Giám đốc, vui lòng xem xét các hợp đồng đã được quản lý thông qua.</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-warning text-dark fs-6 shadow-sm">
+                @Model.Contracts.Count() @(Model.ActiveTab == "ToSign" ? "chờ ký" : "đã ký")
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 pb-5">
+
+    <ul class="nav nav-tabs nav-tabs-director mb-4 mt-5 ps-2">
+        <li class="nav-item">
+            <a class="nav-link @(Model.ActiveTab == "ToSign" ? "active" : "")"
+               href="?ActiveTab=ToSign">Cần ký duyệt</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.ActiveTab == "History" ? "active" : "")"
+               href="?ActiveTab=History">Lịch sử đã ký</a>
+        </li>
+    </ul>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success shadow-sm border-0 border-start border-success border-5">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+        </div>
+    }
+
+    <div class="glass-panel p-4 animate__animated animate__fadeInUp">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover">
+                <thead class="table-light text-uppercase small text-muted">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên Deal</th>
+                        <th>Giá trị</th>
+                        <th>Người tạo</th>
+                        <th>Manager duyệt lúc</th>
+                        <th>Nội dung</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Contracts.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Không có hợp đồng nào trong mục này.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var c in Model.Contracts)
+                    {
+                        <tr>
+                            <td class="fw-bold text-muted">#@c.ContractID</td>
+                            <td class="fw-semibold text-primary">@c.Deal?.DealName</td>
+                            <td class="fw-bold text-success">@((c.Deal?.Value ?? 0).ToString("N0")) đ</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:30px;height:30px;font-size:12px">
+                                        @c.CreatedBy?.FullName.Substring(0, 1)
+                                    </div>
+                                    <small>@c.CreatedBy?.FullName</small>
+                                </div>
+                            </td>
+                            <td class="small text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                @(c.ApprovedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary btn-view-content"
+                                        data-content="@c.ContractContent"
+                                        data-file="@c.FilePath">
+                                    <i class="bi bi-file-earmark-text"></i> Xem
+                                </button>
+                            </td>
+                            <td class="text-end">
+                                @if (Model.ActiveTab == "ToSign")
+                                {
+                                    <button class="btn btn-gold btn-sm px-3 shadow-sm btn-sign-modal"
+                                            data-id="@c.ContractID"
+                                            data-deal="@c.Deal?.DealName"
+                                            data-value="@((c.Deal?.Value ?? 0).ToString("N0"))">
+                                        <i class="bi bi-pen-fill"></i> Ký ngay
+                                    </button>
+                                    <form method="post" asp-page-handler="Reject" class="d-inline ms-1 js-confirm-reject">
+                                        <input type="hidden" name="id" value="@c.ContractID" />
+                                        <button class="btn btn-outline-danger btn-sm border-0">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success"><i class="bi bi-patch-check-fill"></i> Đã ký</span>
+                                    <div class="small text-muted mt-1">@c.DirectorApprovedAt?.ToString("dd/MM/yyyy")</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="signModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-top: 5px solid var(--dir-gold);">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-dark">Xác nhận Ký Hợp đồng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h4 class="text-primary mb-1" id="signDealName">Deal Name</h4>
+                <h3 class="fw-bold text-success" id="signDealValue">0 đ</h3>
+                <p class="text-muted small">Hợp đồng #<span id="signCtrId"></span></p>
+
+                <div class="signature-pad rounded mb-3 position-relative">
+                    <span class="fs-1 text-muted opacity-25"><i class="bi bi-pen"></i></span>
+                    <div class="position-absolute bottom-0 end-0 p-2 small text-muted">
+                        Digital Signature
+                    </div>
+                </div>
+
+                <p class="small text-muted mb-0">Hành động này sẽ xác nhận hợp đồng có hiệu lực pháp lý và cho phép thanh toán.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy</button>
+                <form method="post" asp-page-handler="Sign">
+                    <input type="hidden" name="id" id="formSignId" />
+                    <button type="submit" class="btn btn-gold px-5 py-2 rounded-pill">
+                        XÁC NHẬN KÝ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="contentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nội dung Hợp đồng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="contractContentDisplay" class="p-3 bg-white shadow-sm rounded" style="white-space: pre-wrap;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Modal Ký
+        const signModal = new bootstrap.Modal(document.getElementById('signModal'));
+        document.querySelectorAll('.btn-sign-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('signDealName').textContent = btn.dataset.deal;
+                document.getElementById('signDealValue').textContent = btn.dataset.value + ' đ';
+                document.getElementById('signCtrId').textContent = btn.dataset.id;
+                document.getElementById('formSignId').value = btn.dataset.id;
+                signModal.show();
+            });
+        });
+
+        // Modal Content
+        const contentModal = new bootstrap.Modal(document.getElementById('contentModal'));
+        document.querySelectorAll('.btn-view-content').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('contractContentDisplay').textContent = btn.dataset.content;
+                contentModal.show();
+            });
+        });
+
+        // Reject Confirm
+        document.querySelectorAll('.js-confirm-reject').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Từ chối hợp đồng?',
+                    text: "Hợp đồng sẽ bị hủy bỏ.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Từ chối',
+                    cancelButtonText: 'Hủy'
+                }).then((r) => { if (r.isConfirmed) form.submit(); });
+            });
+        });
+    </script>
+} *@
